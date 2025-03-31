@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Plus, 
@@ -27,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import HistoryItem from "./HistoryItem";
-import Logo from "./Logo";
 import { useNavigate } from "react-router-dom";
 
 interface ChatHistoryItem {
@@ -131,7 +129,7 @@ const ChatSidebar = () => {
       <SidebarHeader>
         <div className="p-4 flex items-center justify-between">
           {state === "expanded" && (
-            <Logo />
+            <div className="text-lg font-semibold">Chats</div>
           )}
           <div className="flex items-center">
             <Button 
@@ -159,7 +157,6 @@ const ChatSidebar = () => {
       
       <SidebarContent>
         <SidebarGroup>
-          {/* Workflows section */}
           {state === "expanded" && (
             <div className="px-2 mb-4">
               <div className="text-xs font-medium text-gray-500 mb-2 px-2">WORKFLOWS</div>
@@ -176,7 +173,6 @@ const ChatSidebar = () => {
             </div>
           )}
           
-          {/* History section - simplified without tabs */}
           {state === "expanded" && (
             <div className="px-2">
               <div className="text-xs font-medium text-gray-500 mb-2 px-2">HISTORY</div>
@@ -200,10 +196,8 @@ const ChatSidebar = () => {
             </div>
           )}
           
-          {/* Collapsed state menu */}
           {state === "collapsed" && (
             <SidebarMenu>
-              {/* Workflows section */}
               <div className="mb-4">
                 {workflows.map((workflow) => (
                   <SidebarMenuItem key={workflow.id}>
@@ -214,7 +208,6 @@ const ChatSidebar = () => {
                 ))}
               </div>
               
-              {/* History items */}
               <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="p-2 space-y-2">
                   {chatHistory.map((chat) => (

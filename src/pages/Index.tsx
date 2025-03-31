@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Bot, 
@@ -132,24 +133,24 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo />
+      {showChat ? (
+        <ChatInterface onClose={handleCloseChat} />
+      ) : (
+        <>
+          <header className="bg-white shadow-sm">
+            <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+              <Logo />
+              
+              <div className="text-xl font-medium panta-gradient-text">Moin Arian</div>
+              
+              <ProfileDropdown 
+                name="Moin Arian" 
+                email="moin@example.com"
+              />
+            </div>
+          </header>
           
-          <div className="text-xl font-medium panta-gradient-text">Moin Arian</div>
-          
-          <ProfileDropdown 
-            name="Moin Arian" 
-            email="moin@example.com"
-          />
-        </div>
-      </header>
-      
-      <main className="container mx-auto px-4 py-8">
-        {showChat ? (
-          <ChatInterface onClose={handleCloseChat} />
-        ) : (
-          <>
+          <main className="container mx-auto px-4 py-8">
             <section className="mb-10">
               <SearchChat onFocus={handleSearchFocus} autoFocus={false} />
             </section>
@@ -290,9 +291,9 @@ const Index = () => {
                 ))}
               </div>
             </section>
-          </>
-        )}
-      </main>
+          </main>
+        </>
+      )}
     </div>
   );
 };
