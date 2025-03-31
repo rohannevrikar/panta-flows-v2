@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Bot, 
@@ -142,8 +141,6 @@ const Index = () => {
           <header className="bg-white shadow-sm">
             <div className="container mx-auto px-4 py-4 flex items-center justify-between">
               <Logo />
-              
-              <div className="text-xl font-medium panta-gradient-text">Moin Arian</div>
               
               <ProfileDropdown 
                 name="Moin Arian" 
