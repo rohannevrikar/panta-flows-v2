@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -13,7 +14,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
 
-    --primary: 260 84% 60%;
+    /* Updated to use PANTA brand colors */
+    --primary: 198 100% 50%;
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 4.8% 95.9%;
@@ -22,15 +24,15 @@
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 260 84% 95%;
-    --accent-foreground: 260 84% 40%;
+    --accent: 24 100% 63%;
+    --accent-foreground: 24 100% 40%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
 
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
-    --ring: 260 84% 60%;
+    --ring: 198 100% 50%;
 
     --radius: 0.75rem;
 
@@ -45,33 +47,7 @@
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 260 84% 60%;
-    --primary-foreground: 0 0% 98%;
-
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 260 84% 60%;
+    /* ... keep existing code (dark mode styles) */
   }
 }
 
@@ -88,11 +64,11 @@
 
 @layer components {
   .workflow-card {
-    @apply relative flex flex-col items-center justify-center p-4 bg-white border rounded-xl transition-all duration-200 hover:shadow-md hover:border-ai-purple-300;
+    @apply relative flex flex-col items-center justify-center p-4 bg-white border rounded-xl transition-all duration-200 hover:shadow-md hover:border-panta-orange;
   }
   
   .workflow-icon {
-    @apply flex items-center justify-center w-16 h-16 mb-3 rounded-xl bg-accent text-ai-purple-600 transition-all duration-200 group-hover:bg-ai-purple-100;
+    @apply flex items-center justify-center w-16 h-16 mb-3 rounded-xl bg-accent text-panta-teal transition-all duration-200 group-hover:bg-panta-blue-light;
   }
   
   .history-item {
@@ -100,6 +76,11 @@
   }
   
   .ai-chat-input {
-    @apply w-full px-4 py-3 bg-white border rounded-full focus:ring-2 focus:ring-ai-purple-400 focus:border-transparent;
+    @apply w-full px-4 py-3 bg-white border rounded-full focus:ring-2 focus:ring-panta-blue focus:border-transparent;
+  }
+
+  .panta-gradient-text {
+    @apply text-transparent bg-clip-text;
+    background-image: linear-gradient(90deg, #1cb5e0 0%, #ff8c00 100%);
   }
 }

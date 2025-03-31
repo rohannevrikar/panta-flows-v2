@@ -8,7 +8,6 @@ import {
   MessageSquare, 
   Music, 
   Plus, 
-  Search, 
   Video
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import ProfileDropdown from "@/components/ProfileDropdown";
 import SearchChat from "@/components/SearchChat";
 import WorkflowCard from "@/components/WorkflowCard";
 import HistoryItem from "@/components/HistoryItem";
+import Logo from "@/components/Logo";
 
 // Sample data
 const workflows = [
@@ -97,14 +97,13 @@ const Index = () => {
       {/* Top navigation/header bar */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bot className="h-7 w-7 text-ai-purple-600" />
-            <h1 className="text-xl font-medium">AI Flow</h1>
-          </div>
+          <Logo />
+          
+          <div className="text-xl font-medium panta-gradient-text">Moin Arian</div>
           
           <ProfileDropdown 
-            name="Jane Doe" 
-            email="jane@example.com"
+            name="Moin Arian" 
+            email="moin@example.com"
           />
         </div>
       </header>

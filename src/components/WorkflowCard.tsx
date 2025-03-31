@@ -15,7 +15,7 @@ const WorkflowCard = ({
   title, 
   description, 
   icon: Icon,
-  color = "text-ai-purple-600",
+  color = "text-panta-teal",
   className,
   onClick
 }: WorkflowCardProps) => {
@@ -28,7 +28,7 @@ const WorkflowCard = ({
         <Icon className={cn("h-8 w-8", color)} />
       </div>
       <h3 className="font-medium text-sm text-center">{title}</h3>
-      <p className="text-xs text-ai-neutral-500 text-center mt-1 line-clamp-2">{description}</p>
+      <p className="text-xs text-gray-500 text-center mt-1 line-clamp-2">{description}</p>
     </div>
   );
 };
