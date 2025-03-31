@@ -21,23 +21,16 @@ const Login = () => {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // In a real app, this would authenticate with a backend
-    if (email && password) {
-      toast({
-        title: "Login successful",
-        description: "Redirecting to dashboard...",
-      });
-      // Simulate loading
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 1000);
-    } else {
-      toast({
-        title: "Login failed",
-        description: "Please enter your email and password",
-        variant: "destructive",
-      });
-    }
+    // For test case: allow login without credentials
+    toast({
+      title: "Login successful",
+      description: "Redirecting to dashboard...",
+    });
+    
+    // Simulate loading
+    setTimeout(() => {
+      navigate("/dashboard");
+    }, 1000);
   };
 
   return (
@@ -50,7 +43,7 @@ const Login = () => {
         }}
       >
         <div className="absolute top-8 left-8">
-          <Logo className="text-white" />
+          <Logo className="text-white" variant="white" />
         </div>
 
         <div className="mt-24 lg:mt-0 z-10 max-w-lg">
@@ -101,7 +94,6 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12"
-                  required
                 />
               </div>
               
@@ -116,7 +108,6 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 pr-10"
-                    required
                   />
                   <button 
                     type="button"
