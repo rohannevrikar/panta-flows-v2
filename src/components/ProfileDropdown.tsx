@@ -50,7 +50,10 @@ const ProfileDropdown = ({ name, email, avatarUrl }: ProfileDropdownProps) => {
           className="cursor-pointer"
           onClick={() => {
             console.log("Dashboard clicked");
-            navigate('/');
+            // Force navigate to dashboard by using the direct path
+            navigate('/dashboard');
+            // Force refresh the page to ensure proper rendering
+            window.location.reload();
           }}
         >
           <LayoutDashboard className="mr-2 h-4 w-4" />

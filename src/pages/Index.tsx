@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { 
   Bot, 
   Code, 
@@ -128,6 +128,12 @@ const Index = () => {
     );
   };
   
+  // Force reset showChat to false when component mounts
+  // This ensures the dashboard is always shown first
+  useState(() => {
+    setShowChat(false);
+  });
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
@@ -149,7 +155,7 @@ const Index = () => {
         ) : (
           <>
             <section className="mb-10">
-              <SearchChat onFocus={handleSearchFocus} autoFocus={true} />
+              <SearchChat onFocus={handleSearchFocus} autoFocus={false} />
             </section>
             
             <section className="mb-10">
