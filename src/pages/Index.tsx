@@ -17,6 +17,7 @@ import SearchChat from "@/components/SearchChat";
 import WorkflowCard from "@/components/WorkflowCard";
 import HistoryItem from "@/components/HistoryItem";
 import Logo from "@/components/Logo";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ChatInterface from "@/components/ChatInterface";
 
@@ -150,6 +151,11 @@ const Index = () => {
               <div onClick={handleSearchFocus}>
                 <SearchChat />
               </div>
+            </section>
+            
+            {/* Theme Switcher (for demonstration) */}
+            <section className="mb-10">
+              <ThemeSwitcher />
             </section>
             
             {/* Workflows section */}

@@ -1,19 +1,36 @@
 
+import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
   className?: string;
+  variant?: "default" | "white";
 }
 
-const Logo = ({ className }: LogoProps) => {
+const Logo = ({ className, variant = "default" }: LogoProps) => {
+  const { theme } = useTheme();
+  const textColor = variant === "white" ? "text-white" : "text-gray-900";
+  const subtitleColor = variant === "white" ? "text-white/70" : "text-gray-600";
+
   return (
     <div className={cn("flex items-center", className)}>
-      <div className="h-10 w-10 rounded-md bg-gradient-to-r from-panta-blue to-panta-orange flex items-center justify-center text-white font-bold text-xl mr-2">
-        P
-      </div>
+      {theme.logo ? (
+        <img src={theme.logo} alt={theme.clientName} className="h-10 w-10 mr-2" />
+      ) : (
+        <div 
+          className="h-10 w-10 rounded-md flex items-center justify-center text-white font-bold text-xl mr-2"
+          style={{ 
+            background: `linear-gradient(to right, ${theme.primaryColor}, ${theme.secondaryColor})` 
+          }}
+        >
+          {theme.clientName.charAt(0)}
+        </div>
+      )}
       <div className="flex flex-col">
-        <span className="font-bold text-lg text-gray-900">PANTA</span>
-        <span className="text-sm text-gray-600">Flows</span>
+        <span className={cn("font-bold text-lg", textColor)}>
+          {theme.clientName}
+        </span>
+        <span className={cn("text-sm", subtitleColor)}>Flows</span>
       </div>
     </div>
   );
