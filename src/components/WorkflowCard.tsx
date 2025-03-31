@@ -21,7 +21,7 @@ const WorkflowCard = ({
 }: WorkflowCardProps) => {
   return (
     <div 
-      className={cn("workflow-card", className)} 
+      className={cn("workflow-card group", className)} 
       onClick={onClick}
     >
       <div className="workflow-icon">
