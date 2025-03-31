@@ -2,8 +2,6 @@
 import { useState } from "react";
 import { 
   Plus, 
-  Star, 
-  Clock, 
   ChevronLeft, 
   MessageSquare,
   Code,
@@ -27,7 +25,6 @@ import {
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import HistoryItem from "./HistoryItem";
 import Logo from "./Logo";
@@ -78,7 +75,6 @@ const workflows = [
 
 const ChatSidebar = () => {
   const { state, toggleSidebar } = useSidebar();
-  const [activeTab, setActiveTab] = useState("recent");
   const navigate = useNavigate();
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([
     {
@@ -125,12 +121,6 @@ const ChatSidebar = () => {
       )
     );
   };
-
-  const favoriteChats = chatHistory.filter(chat => chat.isFavorite);
-  
-  const handleLogoClick = () => {
-    navigate('/dashboard');
-  };
   
   const handleNewChat = () => {
     navigate('/dashboard');
@@ -141,7 +131,7 @@ const ChatSidebar = () => {
       <SidebarHeader>
         <div className="p-4 flex items-center justify-between">
           {state === "expanded" && (
-            <Logo className="text-panta-blue" onClick={handleLogoClick} />
+            <Logo />
           )}
           <div className="flex items-center">
             <Button 
@@ -186,70 +176,27 @@ const ChatSidebar = () => {
             </div>
           )}
           
-          {/* History section */}
+          {/* History section - simplified without tabs */}
           {state === "expanded" && (
             <div className="px-2">
               <div className="text-xs font-medium text-gray-500 mb-2 px-2">HISTORY</div>
-              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <div className="px-2 pt-1">
-                  <TabsList className="grid grid-cols-2 w-full">
-                    <TabsTrigger value="recent" className="flex gap-2 items-center">
-                      <Clock size={14} />
-                      Recent
-                    </TabsTrigger>
-                    <TabsTrigger value="favorites" className="flex gap-2 items-center">
-                      <Star size={14} />
-                      Favorites
-                    </TabsTrigger>
-                  </TabsList>
+              <ScrollArea className="h-[calc(100vh-320px)]">
+                <div className="p-2 space-y-2">
+                  {chatHistory.map((chat) => (
+                    <HistoryItem
+                      key={chat.id}
+                      title={chat.title}
+                      workflowType={chat.workflowType}
+                      timestamp={chat.timestamp}
+                      icon={chat.icon}
+                      status={chat.status}
+                      isFavorite={chat.isFavorite}
+                      onFavoriteToggle={() => toggleFavorite(chat.id)}
+                      onRename={(newName) => renameChat(chat.id, newName)}
+                    />
+                  ))}
                 </div>
-
-                <TabsContent value="recent" className="mt-0">
-                  <ScrollArea className="h-[calc(100vh-320px)]">
-                    <div className="p-2 space-y-2">
-                      {chatHistory.map((chat) => (
-                        <HistoryItem
-                          key={chat.id}
-                          title={chat.title}
-                          workflowType={chat.workflowType}
-                          timestamp={chat.timestamp}
-                          icon={chat.icon}
-                          status={chat.status}
-                          isFavorite={chat.isFavorite}
-                          onFavoriteToggle={() => toggleFavorite(chat.id)}
-                          onRename={(newName) => renameChat(chat.id, newName)}
-                        />
-                      ))}
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-                
-                <TabsContent value="favorites" className="mt-0">
-                  <ScrollArea className="h-[calc(100vh-320px)]">
-                    <div className="p-2 space-y-2">
-                      {favoriteChats.length === 0 ? (
-                        <div className="text-center p-4 text-gray-500">
-                          No favorite chats yet
-                        </div>
-                      ) : (
-                        favoriteChats.map((chat) => (
-                          <HistoryItem
-                            key={chat.id}
-                            title={chat.title}
-                            workflowType={chat.workflowType}
-                            timestamp={chat.timestamp}
-                            icon={chat.icon}
-                            status={chat.status}
-                            isFavorite={chat.isFavorite}
-                            onFavoriteToggle={() => toggleFavorite(chat.id)}
-                            onRename={(newName) => renameChat(chat.id, newName)}
-                          />
-                        ))
-                      )}
-                    </div>
-                  </ScrollArea>
-                </TabsContent>
-              </Tabs>
+              </ScrollArea>
             </div>
           )}
           

@@ -10,24 +10,26 @@ interface LogoProps {
 
 const Logo = ({ className, variant = "default", onClick }: LogoProps) => {
   return (
-    <div 
-      onClick={onClick} 
-      className={cn("font-bold text-xl flex items-center cursor-pointer", className)}
-    >
-      <img 
-        src="/panta-logo.png" 
-        alt="Panta Logo" 
-        className="h-8 mr-2" 
-      />
-      <span className={cn(
-        "mr-1", 
-        variant === "white" ? "text-white" : "text-panta-blue"
-      )}>PANTA</span>
-      <span className={cn(
-        "font-light", 
-        variant === "white" ? "text-white" : "text-panta-orange"
-      )}>flows</span>
-    </div>
+    <Link to="/dashboard" className="no-underline">
+      <div 
+        onClick={onClick} 
+        className={cn("font-bold text-xl flex items-center cursor-pointer", className)}
+      >
+        <img 
+          src="/panta-logo.png" 
+          alt="Panta Logo" 
+          className="h-8 mr-2" 
+        />
+        <span className={cn(
+          "mr-1", 
+          variant === "white" ? "text-white" : "text-panta-blue"
+        )}>PANTA</span>
+        <span className={cn(
+          "font-light", 
+          variant === "white" ? "text-white" : "text-panta-orange"
+        )}>flows</span>
+      </div>
+    </Link>
   );
 };
 
