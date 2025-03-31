@@ -1,4 +1,5 @@
 
+import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 
@@ -9,11 +10,19 @@ interface LogoProps {
 
 const Logo = ({ className, variant = "default" }: LogoProps) => {
   const { theme } = useTheme();
+  const navigate = useNavigate();
   const textColor = variant === "white" ? "text-white" : "text-gray-900";
   const subtitleColor = variant === "white" ? "text-white/70" : "text-gray-600";
 
+  const handleClick = () => {
+    navigate("/dashboard");
+  };
+
   return (
-    <div className={cn("flex items-center", className)}>
+    <div 
+      className={cn("flex items-center cursor-pointer", className)}
+      onClick={handleClick}
+    >
       {theme.logo ? (
         <img src={theme.logo} alt={theme.clientName} className="h-10 w-10 mr-2" />
       ) : (

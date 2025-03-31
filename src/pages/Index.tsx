@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Bot, 
   Code, 
@@ -21,7 +20,6 @@ import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ChatInterface from "@/components/ChatInterface";
 
-// Sample data
 const workflows = [
   {
     id: "chat",
@@ -127,7 +125,6 @@ const Index = () => {
   
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top navigation/header bar */}
       <header className="bg-white shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Logo />
@@ -146,19 +143,14 @@ const Index = () => {
           <ChatInterface />
         ) : (
           <>
-            {/* Search/Chat section */}
             <section className="mb-10">
-              <div onClick={handleSearchFocus}>
-                <SearchChat />
-              </div>
+              <SearchChat onFocus={handleSearchFocus} autoFocus={true} />
             </section>
             
-            {/* Theme Switcher (for demonstration) */}
             <section className="mb-10">
               <ThemeSwitcher />
             </section>
             
-            {/* Workflows section */}
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-medium">Workflows</h2>
@@ -267,7 +259,6 @@ const Index = () => {
               </Tabs>
             </section>
             
-            {/* History section */}
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-medium">Recent History</h2>

@@ -1,12 +1,24 @@
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Search, Send, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-const SearchChat = () => {
+interface SearchChatProps {
+  onFocus?: () => void;
+  autoFocus?: boolean;
+}
+
+const SearchChat = ({ onFocus, autoFocus = false }: SearchChatProps) => {
   const [query, setQuery] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [autoFocus]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +35,10 @@ const SearchChat = () => {
       const newFiles = Array.from(e.target.files);
       setFiles(prev => [...prev, ...newFiles]);
     }
+  };
+
+  const handleFocus = () => {
+    if (onFocus) onFocus();
   };
 
   const removeFile = (index: number) => {
@@ -57,10 +73,12 @@ const SearchChat = () => {
           <Search className="h-5 w-5 text-muted-foreground" />
         </div>
         <input
+          ref={inputRef}
           type="text"
           placeholder="Search or start a conversation..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
+          onFocus={handleFocus}
           className="ai-chat-input pl-10 pr-24"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">

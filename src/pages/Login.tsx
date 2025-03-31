@@ -1,7 +1,7 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, ArrowRight } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,7 +29,7 @@ const Login = () => {
       });
       // Simulate loading
       setTimeout(() => {
-        navigate("/");
+        navigate("/dashboard");
       }, 1000);
     } else {
       toast({
@@ -41,12 +41,11 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-white">
       {/* Hero Section */}
       <div 
-        className="w-full lg:w-3/5 flex flex-col p-8 md:p-16 justify-center relative overflow-hidden"
+        className="w-full lg:w-1/2 flex flex-col p-8 md:p-16 justify-center relative overflow-hidden"
         style={{ 
-          backgroundColor: theme.primaryColor,
           background: `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.accentColor} 100%)` 
         }}
       >
@@ -54,40 +53,42 @@ const Login = () => {
           <Logo className="text-white" />
         </div>
 
-        <div className="mt-24 lg:mt-0 z-10">
-          <h1 className="text-5xl md:text-7xl font-bold text-white mb-4">
+        <div className="mt-24 lg:mt-0 z-10 max-w-lg">
+          <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
             {theme.tagline || "discover designInspiration"}
           </h1>
           
-          <p className="text-white/80 text-xl md:text-2xl max-w-lg mt-6">
+          <p className="text-white/90 text-xl max-w-md mt-4 leading-relaxed">
             Unleash your creativity with AI-powered workflows designed for modern teams
           </p>
 
-          {/* Sample "prompt tag" with rounded background */}
-          <div className="mt-8">
-            <div className="inline-flex items-center px-4 py-3 bg-black/20 backdrop-blur-sm rounded-full text-white">
-              <span className="text-sm mr-2">+</span>
+          {/* Modern "prompt tag" design */}
+          <div className="mt-12 flex flex-wrap gap-3">
+            <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">
+              <span className="mr-2">+</span>
               <span>kostengünstiges ufo für musikvideo</span>
+            </div>
+            <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-white text-sm">
+              <span className="mr-2">+</span>
+              <span>logo re-design modern</span>
             </div>
           </div>
         </div>
 
-        {/* Decorative large logo in background */}
-        <div className="absolute right-[-100px] bottom-[-100px] opacity-10">
-          <img 
-            src={theme.logo || "/panta-logo.png"} 
-            alt="Background Logo" 
-            className="w-[500px] h-[500px]" 
-          />
+        {/* Modern background pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute right-[-5%] bottom-[-5%] w-1/2 h-1/2 rounded-full bg-white/20"></div>
+          <div className="absolute left-[-10%] top-[30%] w-1/3 h-1/3 rounded-full bg-white/10"></div>
         </div>
       </div>
 
       {/* Login Form */}
-      <div className="w-full lg:w-2/5 flex flex-col justify-center items-center p-8">
-        <Card className="w-full max-w-md p-6 border-none shadow-none">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-semibold">Willkommen zurück!</h2>
-            <h1 className="text-4xl font-bold mt-2 mb-8">Log dich ein</h1>
+      <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-gray-50">
+        <Card className="w-full max-w-md p-8 border shadow-lg bg-white rounded-xl">
+          <div className="text-center mb-8">
+            <h2 className="text-xl font-medium text-gray-600">Willkommen zurück!</h2>
+            <h1 className="text-3xl font-bold mt-2 mb-2" 
+              style={{ color: theme.primaryColor }}>Log dich ein</h1>
           </div>
 
           <CardContent className="p-0">

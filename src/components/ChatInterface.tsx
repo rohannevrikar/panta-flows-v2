@@ -1,7 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Button } from "@/components/ui/button";
 import { Bot, User } from "lucide-react";
 import ChatSidebar from "./ChatSidebar";
 import SearchChat from "./SearchChat";
@@ -83,7 +82,7 @@ const ChatInterface = () => {
         </ScrollArea>
         
         <div className="border-t p-4">
-          <SearchChat />
+          <SearchChat autoFocus={true} />
         </div>
       </div>
     </div>
