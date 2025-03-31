@@ -1,6 +1,17 @@
 
 import { useState } from "react";
-import { MessageSquare, Plus, Clock, Star, ChevronLeft } from "lucide-react";
+import { 
+  Plus, 
+  Star, 
+  Clock, 
+  ChevronLeft, 
+  MessageSquare, 
+  Settings,
+  HelpCircle,
+  UserIcon,
+  Share2
+} from "lucide-react";
+
 import { 
   Sidebar, 
   SidebarContent, 
@@ -13,6 +24,7 @@ import {
   SidebarMenuButton,
   useSidebar
 } from "@/components/ui/sidebar";
+
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -129,7 +141,7 @@ const ChatSidebar = () => {
               </div>
 
               <TabsContent value="recent" className="mt-0">
-                <ScrollArea className="h-[calc(100vh-180px)]">
+                <ScrollArea className="h-[calc(100vh-280px)]">
                   <div className="p-2 space-y-2">
                     {chatHistory.map((chat) => (
                       <HistoryItem
@@ -149,7 +161,7 @@ const ChatSidebar = () => {
               </TabsContent>
               
               <TabsContent value="favorites" className="mt-0">
-                <ScrollArea className="h-[calc(100vh-180px)]">
+                <ScrollArea className="h-[calc(100vh-280px)]">
                   <div className="p-2 space-y-2">
                     {favoriteChats.length === 0 ? (
                       <div className="text-center p-4 text-gray-500">
@@ -176,9 +188,41 @@ const ChatSidebar = () => {
             </Tabs>
           )}
           
+          {/* Footer navigation items */}
+          <div className={cn("mt-auto border-t pt-2", 
+            state === "expanded" ? "px-2" : ""
+          )}>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Help & FAQ">
+                  <HelpCircle size={18} />
+                  {state === "expanded" && <span>Help & FAQ</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Settings">
+                  <Settings size={18} />
+                  {state === "expanded" && <span>Settings</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Account">
+                  <UserIcon size={18} />
+                  {state === "expanded" && <span>Account</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton tooltip="Share">
+                  <Share2 size={18} />
+                  {state === "expanded" && <span>Share</span>}
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </div>
+          
           {state === "collapsed" && (
             <SidebarMenu>
-              <ScrollArea className="h-[calc(100vh-180px)]">
+              <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="p-2 space-y-2">
                   {chatHistory.map((chat) => (
                     <SidebarMenuItem key={chat.id}>
