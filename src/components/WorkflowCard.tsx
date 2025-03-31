@@ -15,7 +15,7 @@ const WorkflowCard = ({
   title, 
   description, 
   icon: Icon,
-  color = "text-panta-teal",
+  color = "text-panta-blue",
   className,
   onClick
 }: WorkflowCardProps) => {
