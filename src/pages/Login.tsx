@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
@@ -17,9 +16,11 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     
     // For test case: allow login without credentials
     toast({
@@ -27,8 +28,9 @@ const Login = () => {
       description: "Redirecting to dashboard...",
     });
     
-    // Simulate loading
+    // Simulate loading and navigate immediately to dashboard
     setTimeout(() => {
+      setIsLoading(false);
       navigate("/dashboard");
     }, 1000);
   };
@@ -128,8 +130,9 @@ const Login = () => {
                 type="submit" 
                 className="w-full h-12 text-base"
                 style={{ backgroundColor: theme.primaryColor }}
+                disabled={isLoading}
               >
-                Einloggen
+                {isLoading ? "Logging in..." : "Einloggen"}
               </Button>
               
               <div className="relative my-6">
