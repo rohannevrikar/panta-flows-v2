@@ -89,7 +89,12 @@
 
 @layer components {
   .workflow-card {
-    @apply relative flex flex-col items-center justify-center p-4 bg-white border rounded-xl transition-all duration-200 hover:shadow-md hover:border-ai-purple-300 group;
+    @apply relative flex flex-col items-center justify-center p-4 bg-white border rounded-xl transition-all duration-200 hover:shadow-md hover:border-ai-purple-300;
+  }
+  
+  /* Need to move the group class outside of the @apply statement */
+  .workflow-card {
+    @apply group;
   }
   
   .workflow-icon {
