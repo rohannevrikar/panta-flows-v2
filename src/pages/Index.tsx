@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Bot, 
@@ -107,6 +108,10 @@ const Index = () => {
     setShowChat(true);
   };
 
+  const handleCloseChat = () => {
+    setShowChat(false);
+  };
+
   const toggleFavorite = (id: string) => {
     setHistoryData(prev =>
       prev.map(item => 
@@ -140,7 +145,7 @@ const Index = () => {
       
       <main className="container mx-auto px-4 py-8">
         {showChat ? (
-          <ChatInterface />
+          <ChatInterface onClose={handleCloseChat} />
         ) : (
           <>
             <section className="mb-10">

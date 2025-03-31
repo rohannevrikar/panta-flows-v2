@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, ChevronRight } from "lucide-react";
+import { Bot, User, ChevronRight, X } from "lucide-react";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import ChatSidebar from "./ChatSidebar";
 import SearchChat from "./SearchChat";
 import { Collapsible } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   id: string;
@@ -15,7 +16,12 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatInterface = () => {
+interface ChatInterfaceProps {
+  onClose?: () => void;
+}
+
+const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "1",
@@ -25,9 +31,17 @@ const ChatInterface = () => {
     },
   ]);
 
+  const handleClose = () => {
+    if (onClose) {
+      onClose();
+    } else {
+      navigate("/dashboard");
+    }
+  };
+
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="flex h-[calc(100vh-5rem)] bg-gray-50">
+      <div className="flex h-[calc(100vh-5rem)] bg-gray-50 relative">
         <ChatSidebar />
         
         <div className="flex-1 flex flex-col relative">
@@ -35,7 +49,19 @@ const ChatInterface = () => {
             <SidebarTrigger />
           </div>
           
-          <ScrollArea className="flex-1 p-4 pt-12">
+          <div className="absolute top-4 right-4 z-10">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleClose}
+              className="rounded-full hover:bg-gray-200"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close chat</span>
+            </Button>
+          </div>
+          
+          <ScrollArea className="flex-1 p-4 pt-16">
             <div className="max-w-3xl mx-auto space-y-4">
               {messages.map((message) => (
                 <div
