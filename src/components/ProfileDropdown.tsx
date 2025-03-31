@@ -48,7 +48,10 @@ const ProfileDropdown = ({ name, email, avatarUrl }: ProfileDropdownProps) => {
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           className="cursor-pointer"
-          onClick={() => navigate('/dashboard')}
+          onClick={() => {
+            console.log("Dashboard clicked");
+            navigate('/');
+          }}
         >
           <LayoutDashboard className="mr-2 h-4 w-4" />
           <span>Dashboard</span>
