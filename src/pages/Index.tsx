@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Bot, 
@@ -17,7 +16,6 @@ import SearchChat from "@/components/SearchChat";
 import WorkflowCard from "@/components/WorkflowCard";
 import HistoryItem from "@/components/HistoryItem";
 import Logo from "@/components/Logo";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ChatInterface from "@/components/ChatInterface";
 
@@ -128,8 +126,6 @@ const Index = () => {
     );
   };
   
-  // Force reset showChat to false when component mounts
-  // This ensures the dashboard is always shown first
   useState(() => {
     setShowChat(false);
   });
@@ -156,10 +152,6 @@ const Index = () => {
           <>
             <section className="mb-10">
               <SearchChat onFocus={handleSearchFocus} autoFocus={false} />
-            </section>
-            
-            <section className="mb-10">
-              <ThemeSwitcher />
             </section>
             
             <section className="mb-10">

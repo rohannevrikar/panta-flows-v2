@@ -17,17 +17,17 @@ const Logo = ({ className, variant = "default", onClick }: LogoProps) => {
       >
         <img 
           src="/panta-logo.png" 
-          alt="Panta Logo" 
-          className="h-8 mr-2" 
+          alt="Panta Rhai Logo" 
+          className="h-10 mr-2" 
         />
         <span className={cn(
-          "mr-1", 
-          variant === "white" ? "text-white" : "text-panta-blue"
+          "mr-1 tracking-wider", 
+          variant === "white" ? "text-white" : "text-black"
         )}>PANTA</span>
         <span className={cn(
-          "font-light", 
-          variant === "white" ? "text-white" : "text-panta-orange"
-        )}>flows</span>
+          "font-light tracking-wider", 
+          variant === "white" ? "text-white" : "text-black"
+        )}>RHAI</span>
       </div>
     </Link>
   );

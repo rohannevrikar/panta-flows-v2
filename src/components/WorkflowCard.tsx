@@ -15,7 +15,7 @@ const WorkflowCard = ({
   title, 
   description, 
   icon: Icon,
-  color = "text-panta-blue",
+  color = "text-gray-600",  // Changed to a more minimalistic gray color
   className,
   onClick
 }: WorkflowCardProps) => {
@@ -24,7 +24,7 @@ const WorkflowCard = ({
       className={cn("workflow-card group", className)} 
       onClick={onClick}
     >
-      <div className="workflow-icon">
+      <div className="workflow-icon bg-gray-50">  {/* Changed background to light gray */}
         <Icon className={cn("h-8 w-8", color)} />
       </div>
       <h3 className="font-medium text-sm text-center">{title}</h3>

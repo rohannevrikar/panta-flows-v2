@@ -5,8 +5,14 @@ import { getClientTheme, clientThemes } from "@/lib/client-themes";
 import { Button } from "@/components/ui/button";
 import { Palette } from "lucide-react";
 
-const ThemeSwitcher = () => {
+interface ThemeSwitcherProps {
+  visible?: boolean;
+}
+
+const ThemeSwitcher = ({ visible = false }: ThemeSwitcherProps) => {
   const { updateTheme } = useTheme();
+  
+  if (!visible) return null;
 
   return (
     <div className="flex flex-col gap-2 p-4 rounded-lg bg-gray-50">
