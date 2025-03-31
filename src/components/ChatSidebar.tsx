@@ -5,11 +5,12 @@ import {
   Star, 
   Clock, 
   ChevronLeft, 
-  MessageSquare, 
-  Settings,
-  HelpCircle,
-  UserIcon,
-  Share2
+  MessageSquare,
+  Code,
+  Image,
+  FileText,
+  Video,
+  Music
 } from "lucide-react";
 
 import { 
@@ -18,7 +19,6 @@ import {
   SidebarHeader, 
   SidebarTrigger,
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import HistoryItem from "./HistoryItem";
 import Logo from "./Logo";
+import { useNavigate } from "react-router-dom";
 
 interface ChatHistoryItem {
   id: string;
@@ -42,9 +43,43 @@ interface ChatHistoryItem {
   isFavorite: boolean;
 }
 
+const workflows = [
+  {
+    id: "chat",
+    title: "Chat Assistant",
+    icon: MessageSquare
+  },
+  {
+    id: "code",
+    title: "Code Helper",
+    icon: Code
+  },
+  {
+    id: "image",
+    title: "Image Creator",
+    icon: Image
+  },
+  {
+    id: "doc",
+    title: "Document Helper",
+    icon: FileText
+  },
+  {
+    id: "video",
+    title: "Video Generator",
+    icon: Video
+  },
+  {
+    id: "music",
+    title: "Music Composer",
+    icon: Music
+  },
+];
+
 const ChatSidebar = () => {
   const { state, toggleSidebar } = useSidebar();
   const [activeTab, setActiveTab] = useState("recent");
+  const navigate = useNavigate();
   const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([
     {
       id: "chat1",
@@ -60,7 +95,7 @@ const ChatSidebar = () => {
       title: "Customer feedback summary",
       workflowType: "Document Helper",
       timestamp: new Date(Date.now() - 1000 * 60 * 120),
-      icon: MessageSquare,
+      icon: FileText,
       status: "completed",
       isFavorite: false
     },
@@ -69,7 +104,7 @@ const ChatSidebar = () => {
       title: "Product design ideas",
       workflowType: "Image Creator",
       timestamp: new Date(Date.now() - 1000 * 60 * 240),
-      icon: MessageSquare,
+      icon: Image,
       status: "failed",
       isFavorite: false
     }
@@ -92,13 +127,21 @@ const ChatSidebar = () => {
   };
 
   const favoriteChats = chatHistory.filter(chat => chat.isFavorite);
+  
+  const handleLogoClick = () => {
+    navigate('/dashboard');
+  };
+  
+  const handleNewChat = () => {
+    navigate('/dashboard');
+  };
 
   return (
     <Sidebar>
       <SidebarHeader>
         <div className="p-4 flex items-center justify-between">
           {state === "expanded" && (
-            <Logo className="text-panta-blue" />
+            <Logo className="text-panta-blue cursor-pointer" onClick={handleLogoClick} />
           )}
           <div className="flex items-center">
             <Button 
@@ -107,6 +150,7 @@ const ChatSidebar = () => {
                 state === "collapsed" ? "w-full" : "flex-1"
               )} 
               size="sm"
+              onClick={handleNewChat}
             >
               <Plus size={16} />
               {state === "expanded" && "New Chat"}
@@ -125,50 +169,45 @@ const ChatSidebar = () => {
       
       <SidebarContent>
         <SidebarGroup>
+          {/* Workflows section */}
           {state === "expanded" && (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <div className="px-2 pt-2">
-                <TabsList className="grid grid-cols-2 w-full">
-                  <TabsTrigger value="recent" className="flex gap-2 items-center">
-                    <Clock size={14} />
-                    Recent
-                  </TabsTrigger>
-                  <TabsTrigger value="favorites" className="flex gap-2 items-center">
-                    <Star size={14} />
-                    Favorites
-                  </TabsTrigger>
-                </TabsList>
-              </div>
+            <div className="px-2 mb-4">
+              <div className="text-xs font-medium text-gray-500 mb-2 px-2">WORKFLOWS</div>
+              <SidebarMenu>
+                {workflows.map((workflow) => (
+                  <SidebarMenuItem key={workflow.id}>
+                    <SidebarMenuButton tooltip={workflow.title}>
+                      <workflow.icon size={18} />
+                      <span>{workflow.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </div>
+          )}
+          
+          {/* History section */}
+          {state === "expanded" && (
+            <div className="px-2">
+              <div className="text-xs font-medium text-gray-500 mb-2 px-2">HISTORY</div>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <div className="px-2 pt-1">
+                  <TabsList className="grid grid-cols-2 w-full">
+                    <TabsTrigger value="recent" className="flex gap-2 items-center">
+                      <Clock size={14} />
+                      Recent
+                    </TabsTrigger>
+                    <TabsTrigger value="favorites" className="flex gap-2 items-center">
+                      <Star size={14} />
+                      Favorites
+                    </TabsTrigger>
+                  </TabsList>
+                </div>
 
-              <TabsContent value="recent" className="mt-0">
-                <ScrollArea className="h-[calc(100vh-280px)]">
-                  <div className="p-2 space-y-2">
-                    {chatHistory.map((chat) => (
-                      <HistoryItem
-                        key={chat.id}
-                        title={chat.title}
-                        workflowType={chat.workflowType}
-                        timestamp={chat.timestamp}
-                        icon={chat.icon}
-                        status={chat.status}
-                        isFavorite={chat.isFavorite}
-                        onFavoriteToggle={() => toggleFavorite(chat.id)}
-                        onRename={(newName) => renameChat(chat.id, newName)}
-                      />
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-              
-              <TabsContent value="favorites" className="mt-0">
-                <ScrollArea className="h-[calc(100vh-280px)]">
-                  <div className="p-2 space-y-2">
-                    {favoriteChats.length === 0 ? (
-                      <div className="text-center p-4 text-gray-500">
-                        No favorite chats yet
-                      </div>
-                    ) : (
-                      favoriteChats.map((chat) => (
+                <TabsContent value="recent" className="mt-0">
+                  <ScrollArea className="h-[calc(100vh-320px)]">
+                    <div className="p-2 space-y-2">
+                      {chatHistory.map((chat) => (
                         <HistoryItem
                           key={chat.id}
                           title={chat.title}
@@ -180,48 +219,55 @@ const ChatSidebar = () => {
                           onFavoriteToggle={() => toggleFavorite(chat.id)}
                           onRename={(newName) => renameChat(chat.id, newName)}
                         />
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+                
+                <TabsContent value="favorites" className="mt-0">
+                  <ScrollArea className="h-[calc(100vh-320px)]">
+                    <div className="p-2 space-y-2">
+                      {favoriteChats.length === 0 ? (
+                        <div className="text-center p-4 text-gray-500">
+                          No favorite chats yet
+                        </div>
+                      ) : (
+                        favoriteChats.map((chat) => (
+                          <HistoryItem
+                            key={chat.id}
+                            title={chat.title}
+                            workflowType={chat.workflowType}
+                            timestamp={chat.timestamp}
+                            icon={chat.icon}
+                            status={chat.status}
+                            isFavorite={chat.isFavorite}
+                            onFavoriteToggle={() => toggleFavorite(chat.id)}
+                            onRename={(newName) => renameChat(chat.id, newName)}
+                          />
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
+            </div>
           )}
           
-          {/* Footer navigation items */}
-          <div className={cn("mt-auto border-t pt-2", 
-            state === "expanded" ? "px-2" : ""
-          )}>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Help & FAQ">
-                  <HelpCircle size={18} />
-                  {state === "expanded" && <span>Help & FAQ</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Settings">
-                  <Settings size={18} />
-                  {state === "expanded" && <span>Settings</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Account">
-                  <UserIcon size={18} />
-                  {state === "expanded" && <span>Account</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip="Share">
-                  <Share2 size={18} />
-                  {state === "expanded" && <span>Share</span>}
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </div>
-          
+          {/* Collapsed state menu */}
           {state === "collapsed" && (
             <SidebarMenu>
+              {/* Workflows section */}
+              <div className="mb-4">
+                {workflows.map((workflow) => (
+                  <SidebarMenuItem key={workflow.id}>
+                    <SidebarMenuButton tooltip={workflow.title}>
+                      <workflow.icon size={18} />
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </div>
+              
+              {/* History items */}
               <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="p-2 space-y-2">
                   {chatHistory.map((chat) => (
