@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { 
   Bot, 
@@ -17,7 +16,6 @@ import SearchChat from "@/components/SearchChat";
 import WorkflowCard from "@/components/WorkflowCard";
 import HistoryItem from "@/components/HistoryItem";
 import Logo from "@/components/Logo";
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import ChatInterface from "@/components/ChatInterface";
 
 const workflows = [
@@ -131,6 +129,14 @@ const Index = () => {
     setShowChat(false);
   });
   
+  const getWorkflowsByRow = (workflows: typeof workflows) => {
+    const rows = [];
+    for (let i = 0; i < workflows.length; i += 2) {
+      rows.push(workflows.slice(i, i + 2));
+    }
+    return rows;
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50">
       {showChat ? (
@@ -172,93 +178,54 @@ const Index = () => {
                 </TabsList>
                 
                 <TabsContent value="all" className="animate-fade-in">
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      loop: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent>
-                      {workflows.map((workflow) => (
-                        <CarouselItem key={workflow.id} className="md:basis-1/3 lg:basis-1/4">
-                          <WorkflowCard
-                            title={workflow.title}
-                            description={workflow.description}
-                            icon={workflow.icon}
-                            onClick={() => {
-                              console.log(`Workflow clicked: ${workflow.id}`);
-                              setShowChat(true);
-                            }}
-                          />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <div className="flex justify-center mt-4">
-                      <CarouselPrevious className="static translate-y-0 mr-2" />
-                      <CarouselNext className="static translate-y-0" />
-                    </div>
-                  </Carousel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {workflows.map((workflow) => (
+                      <WorkflowCard
+                        key={workflow.id}
+                        title={workflow.title}
+                        description={workflow.description}
+                        icon={workflow.icon}
+                        onClick={() => {
+                          console.log(`Workflow clicked: ${workflow.id}`);
+                          setShowChat(true);
+                        }}
+                      />
+                    ))}
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="recent" className="animate-fade-in">
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      loop: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent>
-                      {workflows.slice(0, 3).map((workflow) => (
-                        <CarouselItem key={workflow.id} className="md:basis-1/3 lg:basis-1/4">
-                          <WorkflowCard
-                            title={workflow.title}
-                            description={workflow.description}
-                            icon={workflow.icon}
-                            onClick={() => {
-                              console.log(`Workflow clicked: ${workflow.id}`);
-                              setShowChat(true);
-                            }}
-                          />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <div className="flex justify-center mt-4">
-                      <CarouselPrevious className="static translate-y-0 mr-2" />
-                      <CarouselNext className="static translate-y-0" />
-                    </div>
-                  </Carousel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {workflows.slice(0, 3).map((workflow) => (
+                      <WorkflowCard
+                        key={workflow.id}
+                        title={workflow.title}
+                        description={workflow.description}
+                        icon={workflow.icon}
+                        onClick={() => {
+                          console.log(`Workflow clicked: ${workflow.id}`);
+                          setShowChat(true);
+                        }}
+                      />
+                    ))}
+                  </div>
                 </TabsContent>
                 
                 <TabsContent value="favorites" className="animate-fade-in">
-                  <Carousel
-                    opts={{
-                      align: "start",
-                      loop: true,
-                    }}
-                    className="w-full"
-                  >
-                    <CarouselContent>
-                      {workflows.slice(0, 2).map((workflow) => (
-                        <CarouselItem key={workflow.id} className="md:basis-1/3 lg:basis-1/4">
-                          <WorkflowCard
-                            title={workflow.title}
-                            description={workflow.description}
-                            icon={workflow.icon}
-                            onClick={() => {
-                              console.log(`Workflow clicked: ${workflow.id}`);
-                              setShowChat(true);
-                            }}
-                          />
-                        </CarouselItem>
-                      ))}
-                    </CarouselContent>
-                    <div className="flex justify-center mt-4">
-                      <CarouselPrevious className="static translate-y-0 mr-2" />
-                      <CarouselNext className="static translate-y-0" />
-                    </div>
-                  </Carousel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                    {workflows.slice(0, 2).map((workflow) => (
+                      <WorkflowCard
+                        key={workflow.id}
+                        title={workflow.title}
+                        description={workflow.description}
+                        icon={workflow.icon}
+                        onClick={() => {
+                          console.log(`Workflow clicked: ${workflow.id}`);
+                          setShowChat(true);
+                        }}
+                      />
+                    ))}
+                  </div>
                 </TabsContent>
               </Tabs>
             </section>
