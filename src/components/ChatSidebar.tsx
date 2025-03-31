@@ -141,7 +141,7 @@ const ChatSidebar = () => {
       <SidebarHeader>
         <div className="p-4 flex items-center justify-between">
           {state === "expanded" && (
-            <Logo className="text-panta-blue cursor-pointer" onClick={handleLogoClick} />
+            <Logo className="text-panta-blue" onClick={handleLogoClick} />
           )}
           <div className="flex items-center">
             <Button 
