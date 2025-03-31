@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Bot, 
@@ -7,7 +8,8 @@ import {
   MessageSquare, 
   Music, 
   Plus, 
-  Video
+  Video,
+  SlidersHorizontal
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +19,7 @@ import WorkflowCard from "@/components/WorkflowCard";
 import HistoryItem from "@/components/HistoryItem";
 import Logo from "@/components/Logo";
 import ChatInterface from "@/components/ChatInterface";
+import { Slider } from "@/components/ui/slider";
 
 const workflows = [
   {
@@ -100,6 +103,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [showChat, setShowChat] = useState(false);
   const [historyData, setHistoryData] = useState(historyItems);
+  const [sliderValue, setSliderValue] = useState([50]);
   
   const handleSearchFocus = () => {
     setShowChat(true);
@@ -128,14 +132,6 @@ const Index = () => {
   useState(() => {
     setShowChat(false);
   });
-  
-  const getWorkflowsByRow = (workflows: typeof workflows) => {
-    const rows = [];
-    for (let i = 0; i < workflows.length; i += 2) {
-      rows.push(workflows.slice(i, i + 2));
-    }
-    return rows;
-  };
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -228,6 +224,28 @@ const Index = () => {
                   </div>
                 </TabsContent>
               </Tabs>
+              
+              <div className="mt-8 bg-white p-6 rounded-lg border shadow-sm">
+                <div className="flex items-center gap-2 mb-2">
+                  <SlidersHorizontal size={20} className="text-panta-blue" />
+                  <h3 className="font-medium">Workflow Settings</h3>
+                </div>
+                <p className="text-sm text-gray-500 mb-4">Adjust the creativity level for your workflows</p>
+                <div className="flex items-center gap-4">
+                  <span className="text-sm text-gray-600">Conservative</span>
+                  <Slider 
+                    className="flex-1"
+                    value={sliderValue}
+                    onValueChange={setSliderValue}
+                    max={100}
+                    step={1}
+                  />
+                  <span className="text-sm text-gray-600">Creative</span>
+                </div>
+                <div className="text-center mt-1">
+                  <span className="text-xs text-gray-500">{sliderValue[0]}%</span>
+                </div>
+              </div>
             </section>
             
             <section>
