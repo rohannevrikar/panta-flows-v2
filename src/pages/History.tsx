@@ -23,7 +23,7 @@ interface HistoryItemType {
   workflowType: string;
   timestamp: Date;
   icon: LucideIcon;
-  status: "completed" | "failed" | "in-progress";
+  status: "completed" | "failed" | "processing";
   isFavorite: boolean;
 }
 
@@ -98,7 +98,7 @@ const historyItems: HistoryItemType[] = [
     workflowType: "Chat Assistant",
     timestamp: new Date(Date.now() - 1000 * 60 * 60 * 120),
     icon: MessageSquare,
-    status: "in-progress",
+    status: "processing",
     isFavorite: false
   }
 ];
