@@ -1,5 +1,5 @@
 
-import { useToast } from "@/hooks/use-toast"
+import { useToast } from "@/frontend/hooks/use-toast"
 import {
   Toast,
   ToastClose,
@@ -16,7 +16,7 @@ export function Toaster() {
     <ToastProvider>
       {toasts.map(function ({ title, description, action, ...props }) {
         return (
-          <Toast key={Math.random().toString()} {...props}>
+          <Toast key={props.key || Math.random().toString()} {...props}>
             <div className="grid gap-1">
               {title && <ToastTitle>{title}</ToastTitle>}
               {description && (

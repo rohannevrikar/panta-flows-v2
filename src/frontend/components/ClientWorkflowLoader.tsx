@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/frontend/hooks/useAuth';
+import { useAuth } from '@/frontend/contexts/AuthContext';
 import { clientService } from '@/frontend/services/clientService';
 import { workflowService } from '@/frontend/services/workflowService';
 import { useTheme } from '@/frontend/contexts/ThemeContext';
