@@ -2,7 +2,8 @@
 import { toast } from "sonner";
 
 // Base API URL for our FastAPI backend
-const API_BASE_URL = "http://localhost:8000/api";
+// Use environment variable or default to localhost in development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
 
 // Generic error handler for API requests
 const handleApiError = (error: any) => {
