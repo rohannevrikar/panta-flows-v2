@@ -13,6 +13,7 @@ import Profile from "./pages/Profile";
 import ChatInterface from "./components/ChatInterface";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { applyThemeColors } from "./lib/theme-utils";
+import VersionNumber from "./components/VersionNumber";
 
 // Theme wrapper to apply colors on mount and theme changes
 const ThemeApplier = ({ children }: { children: React.ReactNode }) => {
@@ -34,6 +35,7 @@ const App = () => (
         <ThemeApplier>
           <Toaster />
           <Sonner />
+          <VersionNumber />
           <BrowserRouter>
             <Routes>
               <Route path="/login" element={<Login />} />
