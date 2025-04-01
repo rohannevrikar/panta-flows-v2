@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import WorkflowMenu from "./WorkflowMenu";
 import { useState } from "react";
 import { toast } from "sonner";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface WorkflowCardProps {
   title: string;
@@ -12,6 +13,7 @@ interface WorkflowCardProps {
   color?: string;
   className?: string;
   onClick?: () => void;
+  translationKey?: string;
 }
 
 const WorkflowCard = ({ 
@@ -20,27 +22,33 @@ const WorkflowCard = ({
   icon: Icon,
   color = "text-gray-600",  // Default color if none provided
   className,
-  onClick
+  onClick,
+  translationKey
 }: WorkflowCardProps) => {
   const [isHovering, setIsHovering] = useState(false);
+  const { translate } = useLanguage();
   
   const handleEdit = () => {
-    toast.info(`Editing workflow: ${title}`);
+    toast.info(`${translate('menu.editWorkflow')}: ${title}`);
   };
   
   const handleSettings = () => {
-    toast.info(`Opening settings for: ${title}`);
+    toast.info(`${translate('menu.workflowSettings')}: ${title}`);
   };
   
   const handleDelete = () => {
-    toast.error(`Delete workflow: ${title}`, {
-      description: "This action can't be undone.",
+    toast.error(`${translate('menu.deleteWorkflow')}: ${title}`, {
+      description: translate('menu.deleteConfirm'),
       action: {
-        label: "Undo",
-        onClick: () => toast.success("Deletion cancelled")
+        label: translate('menu.undoDelete'),
+        onClick: () => toast.success(translate('menu.deleteCancelled'))
       }
     });
   };
+
+  // Display translated title and description if translation keys are available
+  const displayTitle = translationKey ? translate(`workflow.${translationKey}`) : title;
+  const displayDescription = translationKey ? translate(`workflow.${translationKey}Desc`) : description;
 
   return (
     <div 
@@ -69,8 +77,8 @@ const WorkflowCard = ({
       <div className="workflow-icon bg-gray-50 p-5 rounded-full mb-4 group-hover:bg-black group-hover:text-white transition-colors duration-200">
         <Icon className={cn("h-8 w-8", color, "group-hover:text-white")} />
       </div>
-      <h3 className="font-medium text-sm text-center group-hover:text-black mb-1">{title}</h3>
-      <p className="text-xs text-gray-500 text-center mt-1 line-clamp-2 group-hover:text-gray-700">{description}</p>
+      <h3 className="font-medium text-sm text-center group-hover:text-black mb-1">{displayTitle}</h3>
+      <p className="text-xs text-gray-500 text-center mt-1 line-clamp-2 group-hover:text-gray-700">{displayDescription}</p>
     </div>
   );
 };

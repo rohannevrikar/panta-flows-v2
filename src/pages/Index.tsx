@@ -25,6 +25,8 @@ import NewWorkflowDialog from "@/components/NewWorkflowDialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 interface Workflow {
   id: string;
@@ -32,6 +34,7 @@ interface Workflow {
   description: string;
   icon: LucideIcon;
   color?: string;
+  translationKey?: string;
 }
 
 const workflows: Workflow[] = [
@@ -39,37 +42,43 @@ const workflows: Workflow[] = [
     id: "chat",
     title: "Chat Assistant",
     description: "General purpose AI chat assistant",
-    icon: MessageSquare
+    icon: MessageSquare,
+    translationKey: "chatAssistant"
   },
   {
     id: "code",
     title: "Code Helper",
     description: "Generate and explain code",
-    icon: Code
+    icon: Code,
+    translationKey: "codeHelper"
   },
   {
     id: "image",
     title: "Image Creator",
     description: "Create images from text descriptions",
-    icon: Image
+    icon: Image,
+    translationKey: "imageCreator"
   },
   {
     id: "doc",
     title: "Document Helper",
     description: "Summarize and extract from documents",
-    icon: FileText
+    icon: FileText,
+    translationKey: "documentHelper"
   },
   {
     id: "video",
     title: "Video Generator",
     description: "Create videos from text prompts",
-    icon: Video
+    icon: Video,
+    translationKey: "videoGenerator"
   },
   {
     id: "music",
     title: "Music Composer",
     description: "Generate music and audio",
-    icon: Music
+    icon: Music,
+    translationKey: "musicComposer"
   },
 ];
 
@@ -115,6 +124,7 @@ const historyItems = [
 const Index = () => {
   const navigate = useNavigate();
   const { theme } = useTheme();
+  const { translate } = useLanguage();
   const [activeTab, setActiveTab] = useState("all");
   const [showChat, setShowChat] = useState(false);
   const [historyData, setHistoryData] = useState(historyItems);
@@ -212,6 +222,7 @@ const Index = () => {
                 >
                   <History className="h-5 w-5" />
                 </Button>
+                <LanguageSelector />
                 <ProfileDropdown 
                   name="Moin Arian" 
                   email="moin@example.com"
@@ -235,22 +246,28 @@ const Index = () => {
               
               <section className="mb-10">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-medium text-white">Workflows</h2>
+                  <h2 className="text-xl font-medium text-white">{translate('dashboard.workflows')}</h2>
                   <Button 
                     variant="outline" 
                     className="gap-1 hover:bg-black hover:text-white bg-white/20 backdrop-blur-sm text-white border-white/30"
                     onClick={() => setShowNewWorkflowDialog(true)}
                   >
                     <Plus className="h-4 w-4" />
-                    New Workflow
+                    {translate('dashboard.newWorkflow')}
                   </Button>
                 </div>
                 
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
                   <TabsList className="mb-6 bg-white/20 backdrop-blur-sm">
-                    <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">All</TabsTrigger>
-                    <TabsTrigger value="recent" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Recent</TabsTrigger>
-                    <TabsTrigger value="favorites" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Favorites</TabsTrigger>
+                    <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">
+                      {translate('dashboard.all')}
+                    </TabsTrigger>
+                    <TabsTrigger value="recent" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">
+                      {translate('dashboard.recent')}
+                    </TabsTrigger>
+                    <TabsTrigger value="favorites" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">
+                      {translate('dashboard.favorites')}
+                    </TabsTrigger>
                   </TabsList>
                   
                   <TabsContent value="all" className="animate-fade-in">
@@ -262,6 +279,7 @@ const Index = () => {
                           description={workflow.description}
                           icon={workflow.icon}
                           color={workflow.color}
+                          translationKey={workflow.translationKey}
                           onClick={() => handleWorkflowClick(workflow)}
                         />
                       ))}
@@ -276,6 +294,7 @@ const Index = () => {
                           title={workflow.title}
                           description={workflow.description}
                           icon={workflow.icon}
+                          translationKey={workflow.translationKey}
                           onClick={() => handleWorkflowClick(workflow)}
                         />
                       ))}
@@ -290,6 +309,7 @@ const Index = () => {
                           title={workflow.title}
                           description={workflow.description}
                           icon={workflow.icon}
+                          translationKey={workflow.translationKey}
                           onClick={() => handleWorkflowClick(workflow)}
                         />
                       ))}
@@ -300,11 +320,11 @@ const Index = () => {
                 <div className="mt-8 bg-white/20 backdrop-blur-sm p-6 rounded-lg border border-white/30 text-white shadow-sm">
                   <div className="flex items-center gap-2 mb-2">
                     <SlidersHorizontal size={20} className="text-white" />
-                    <h3 className="font-medium">Workflow Settings</h3>
+                    <h3 className="font-medium">{translate('dashboard.workflowSettings')}</h3>
                   </div>
-                  <p className="text-sm text-white/80 mb-4">Adjust the creativity level for your workflows</p>
+                  <p className="text-sm text-white/80 mb-4">{translate('dashboard.creativityLevel')}</p>
                   <div className="flex items-center gap-4">
-                    <span className="text-sm">Conservative</span>
+                    <span className="text-sm">{translate('dashboard.conservative')}</span>
                     <Slider 
                       className="flex-1"
                       value={sliderValue}
@@ -312,7 +332,7 @@ const Index = () => {
                       max={100}
                       step={1}
                     />
-                    <span className="text-sm">Creative</span>
+                    <span className="text-sm">{translate('dashboard.creative')}</span>
                   </div>
                   <div className="text-center mt-1">
                     <span className="text-xs text-white/80">{sliderValue[0]}%</span>
@@ -326,14 +346,14 @@ const Index = () => {
             <div className="container mx-auto px-4">
               <section>
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-medium text-gray-800">Recent History</h2>
+                  <h2 className="text-xl font-medium text-gray-800">{translate('dashboard.recentHistory')}</h2>
                   <Button 
                     variant="ghost" 
                     size="sm" 
                     className="hover:bg-gray-100 text-gray-700"
                     onClick={() => navigate("/history")}
                   >
-                    View All
+                    {translate('app.viewAll')}
                   </Button>
                 </div>
                 

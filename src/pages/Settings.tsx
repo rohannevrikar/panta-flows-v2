@@ -7,12 +7,29 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, Settings as SettingsIcon, Bell, Shield, Eye, Workflow, SlidersHorizontal } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Settings as SettingsIcon, 
+  Bell, 
+  Shield, 
+  Eye, 
+  SlidersHorizontal, 
+  Globe 
+} from "lucide-react";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import Logo from "@/components/Logo";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { useLanguage, Language } from "@/contexts/LanguageContext";
 
 const Settings = () => {
   const navigate = useNavigate();
+  const { language, setLanguage, translate } = useLanguage();
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
@@ -45,14 +62,14 @@ const Settings = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="flex items-center mb-8">
           <SettingsIcon className="mr-2 h-6 w-6 text-gray-700" />
-          <h1 className="text-2xl font-semibold">Settings</h1>
+          <h1 className="text-2xl font-semibold">{translate('settings.title')}</h1>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="col-span-1 space-y-1">
-            <div className="font-medium">Settings</div>
+            <div className="font-medium">{translate('settings.title')}</div>
             <div className="text-sm text-gray-500">
-              Manage your account settings and preferences
+              {translate('settings.subtitle')}
             </div>
           </div>
           
@@ -60,9 +77,9 @@ const Settings = () => {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-base">Notifications</Label>
+                  <Label className="text-base">{translate('settings.notifications')}</Label>
                   <div className="text-sm text-gray-500">
-                    Receive notifications about your account activity
+                    {translate('settings.notificationsDesc')}
                   </div>
                 </div>
                 <Switch 
@@ -73,9 +90,9 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-base">Dark Mode</Label>
+                  <Label className="text-base">{translate('settings.darkMode')}</Label>
                   <div className="text-sm text-gray-500">
-                    Toggle between light and dark mode
+                    {translate('settings.darkModeDesc')}
                   </div>
                 </div>
                 <Switch 
@@ -86,15 +103,48 @@ const Settings = () => {
               
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label className="text-base">Two-Factor Authentication</Label>
+                  <Label className="text-base">{translate('settings.twoFactor')}</Label>
                   <div className="text-sm text-gray-500">
-                    Add an extra layer of security to your account
+                    {translate('settings.twoFactorDesc')}
                   </div>
                 </div>
                 <Switch 
                   checked={twoFactorEnabled}
                   onCheckedChange={setTwoFactorEnabled}
                 />
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label className="text-base">{translate('settings.language')}</Label>
+                  <div className="text-sm text-gray-500">
+                    {translate('settings.languageDesc')}
+                  </div>
+                </div>
+                <Select
+                  value={language}
+                  onValueChange={(value) => setLanguage(value as Language)}
+                >
+                  <SelectTrigger className="w-40">
+                    <SelectValue>
+                      {language === 'en' ? 'English' : 'Deutsch'}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">
+                      <div className="flex items-center gap-2">
+                        <span>🇬🇧</span>
+                        <span>English</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="de">
+                      <div className="flex items-center gap-2">
+                        <span>🇩🇪</span>
+                        <span>Deutsch</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             
@@ -103,11 +153,11 @@ const Settings = () => {
             <div className="space-y-6">
               <h3 className="text-lg font-medium flex items-center gap-2">
                 <SlidersHorizontal className="h-5 w-5" />
-                AI Settings
+                {translate('settings.aiSettings')}
               </h3>
               
               <div className="space-y-2">
-                <Label htmlFor="apiKey">API Key</Label>
+                <Label htmlFor="apiKey">{translate('settings.apiKey')}</Label>
                 <div className="flex gap-2">
                   <Input 
                     id="apiKey"
@@ -118,21 +168,21 @@ const Settings = () => {
                   />
                   <Button variant="outline">
                     <Eye className="h-4 w-4 mr-2" />
-                    Show
+                    {translate('settings.show')}
                   </Button>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Your API key is used to authenticate requests to the AI service
+                  {translate('settings.apiKeyDesc')}
                 </p>
               </div>
               
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <Label>Model Temperature</Label>
+                  <Label>{translate('settings.modelTemp')}</Label>
                   <span className="text-sm">{modelTemperature[0]}%</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">Conservative</span>
+                  <span className="text-sm text-gray-600">{translate('dashboard.conservative')}</span>
                   <Slider
                     className="flex-1"
                     value={modelTemperature}
@@ -140,10 +190,10 @@ const Settings = () => {
                     max={100}
                     step={1}
                   />
-                  <span className="text-sm text-gray-600">Creative</span>
+                  <span className="text-sm text-gray-600">{translate('dashboard.creative')}</span>
                 </div>
                 <p className="text-sm text-gray-500">
-                  Adjust how creative the AI responses should be
+                  {translate('settings.modelTempDesc')}
                 </p>
               </div>
             </div>
