@@ -70,19 +70,31 @@ const History = () => {
     }
   };
 
-  // Map HistoryItemStatus to the string type expected by HistoryItem component
-  const mapStatusToString = (status: HistoryItemStatus | string): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
+  // Function to convert HistoryItemStatus to the expected string format
+  const mapStatusToString = (status: HistoryItemStatus | string): "completed" | "failed" | "pending" | "processing" => {
+    // If status is already a string, use the helper function
     if (typeof status === 'string') {
       return convertStatusString(status);
     }
     
+    // If status is an object, access its status property
     return convertStatusString(status.status);
   };
   
-  // Helper function to convert status strings and handle the "in_progress" case
-  const convertStatusString = (statusStr: string): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
-    // Map "in_progress" to "processing" for compatibility with HistoryItem component
-    return statusStr === "in_progress" ? "processing" : statusStr as any;
+  // Helper function to convert status strings
+  const convertStatusString = (statusStr: string): "completed" | "failed" | "pending" | "processing" => {
+    switch (statusStr) {
+      case "completed":
+        return "completed";
+      case "failed":
+        return "failed";
+      case "pending":
+        return "pending";
+      case "in_progress":
+        return "processing";
+      default:
+        return "processing"; // Default fallback
+    }
   };
 
   const renderContent = () => {
@@ -121,7 +133,7 @@ const History = () => {
               id={item.id}
               title={item.title}
               timestamp={new Date(item.date)}
-              status={mapStatusToString(item.status) as "completed" | "failed" | "pending" | "processing"}
+              status={mapStatusToString(item.status)}
               iconName={item.workflowType}
               onClick={() => handleDelete(item.id)}
             />
