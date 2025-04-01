@@ -10,6 +10,7 @@ import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import History from "./pages/History";
 import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
 import ChatInterface from "./components/ChatInterface";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { applyThemeColors } from "./lib/theme-utils";
@@ -42,6 +43,7 @@ const App = () => (
               <Route path="/dashboard" element={<Index />} />
               <Route path="/history" element={<History />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
               <Route path="/chat" element={<ChatInterface />} />
               <Route path="/" element={<Navigate to="/login" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
