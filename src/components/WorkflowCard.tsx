@@ -45,7 +45,7 @@ const WorkflowCard = ({
   return (
     <div 
       className={cn(
-        "workflow-card group transition-all duration-200 relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md flex flex-col items-center", 
+        "workflow-card group transition-all duration-200 relative p-6 rounded-lg bg-white shadow-md border border-gray-100 hover:border-gray-300", 
         className
       )}
       onClick={onClick}

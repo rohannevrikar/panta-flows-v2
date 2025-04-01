@@ -190,10 +190,7 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen" style={{ 
-      background: `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.accentColor} 100%)`,
-      backgroundAttachment: "fixed" 
-    }}>
+    <div className="min-h-screen flex flex-col">
       {showChat ? (
         <ChatInterface 
           onClose={handleCloseChat} 
@@ -223,143 +220,151 @@ const Index = () => {
             </div>
           </header>
           
-          <main className="container mx-auto px-4 py-8">
-            <section className="mb-10">
-              <SearchChat 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onSubmit={handleSearchSubmit}
-                disableNavigation={true}
-              />
-            </section>
-            
-            <section className="mb-10">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-medium text-white">Workflows</h2>
-                <Button 
-                  variant="outline" 
-                  className="gap-1 hover:bg-black hover:text-white bg-white/20 backdrop-blur-sm text-white border-white/30"
-                  onClick={() => setShowNewWorkflowDialog(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  New Workflow
-                </Button>
-              </div>
+          <div className="py-8" style={{ 
+            background: `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.accentColor} 100%)`,
+          }}>
+            <div className="container mx-auto px-4">
+              <section className="mb-10">
+                <SearchChat 
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onSubmit={handleSearchSubmit}
+                  disableNavigation={true}
+                />
+              </section>
               
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6 bg-white/20 backdrop-blur-sm">
-                  <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">All</TabsTrigger>
-                  <TabsTrigger value="recent" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Recent</TabsTrigger>
-                  <TabsTrigger value="favorites" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Favorites</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="all" className="animate-fade-in">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {availableWorkflows.map((workflow) => (
-                      <WorkflowCard
-                        key={workflow.id}
-                        title={workflow.title}
-                        description={workflow.description}
-                        icon={workflow.icon}
-                        color={workflow.color}
-                        onClick={() => handleWorkflowClick(workflow)}
-                      />
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="recent" className="animate-fade-in">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {workflows.slice(0, 3).map((workflow) => (
-                      <WorkflowCard
-                        key={workflow.id}
-                        title={workflow.title}
-                        description={workflow.description}
-                        icon={workflow.icon}
-                        onClick={() => handleWorkflowClick(workflow)}
-                      />
-                    ))}
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="favorites" className="animate-fade-in">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {workflows.slice(0, 2).map((workflow) => (
-                      <WorkflowCard
-                        key={workflow.id}
-                        title={workflow.title}
-                        description={workflow.description}
-                        icon={workflow.icon}
-                        onClick={() => handleWorkflowClick(workflow)}
-                      />
-                    ))}
-                  </div>
-                </TabsContent>
-              </Tabs>
-              
-              <div className="mt-8 bg-white/20 backdrop-blur-sm p-6 rounded-lg border border-white/30 text-white shadow-sm">
-                <div className="flex items-center gap-2 mb-2">
-                  <SlidersHorizontal size={20} className="text-white" />
-                  <h3 className="font-medium">Workflow Settings</h3>
+              <section className="mb-10">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-medium text-white">Workflows</h2>
+                  <Button 
+                    variant="outline" 
+                    className="gap-1 hover:bg-black hover:text-white bg-white/20 backdrop-blur-sm text-white border-white/30"
+                    onClick={() => setShowNewWorkflowDialog(true)}
+                  >
+                    <Plus className="h-4 w-4" />
+                    New Workflow
+                  </Button>
                 </div>
-                <p className="text-sm text-white/80 mb-4">Adjust the creativity level for your workflows</p>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm">Conservative</span>
-                  <Slider 
-                    className="flex-1"
-                    value={sliderValue}
-                    onValueChange={setSliderValue}
-                    max={100}
-                    step={1}
-                  />
-                  <span className="text-sm">Creative</span>
+                
+                <Tabs value={activeTab} onValueChange={setActiveTab}>
+                  <TabsList className="mb-6 bg-white/20 backdrop-blur-sm">
+                    <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">All</TabsTrigger>
+                    <TabsTrigger value="recent" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Recent</TabsTrigger>
+                    <TabsTrigger value="favorites" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Favorites</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="all" className="animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                      {availableWorkflows.map((workflow) => (
+                        <WorkflowCard
+                          key={workflow.id}
+                          title={workflow.title}
+                          description={workflow.description}
+                          icon={workflow.icon}
+                          color={workflow.color}
+                          onClick={() => handleWorkflowClick(workflow)}
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="recent" className="animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                      {workflows.slice(0, 3).map((workflow) => (
+                        <WorkflowCard
+                          key={workflow.id}
+                          title={workflow.title}
+                          description={workflow.description}
+                          icon={workflow.icon}
+                          onClick={() => handleWorkflowClick(workflow)}
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="favorites" className="animate-fade-in">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
+                      {workflows.slice(0, 2).map((workflow) => (
+                        <WorkflowCard
+                          key={workflow.id}
+                          title={workflow.title}
+                          description={workflow.description}
+                          icon={workflow.icon}
+                          onClick={() => handleWorkflowClick(workflow)}
+                        />
+                      ))}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+                
+                <div className="mt-8 bg-white/20 backdrop-blur-sm p-6 rounded-lg border border-white/30 text-white shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <SlidersHorizontal size={20} className="text-white" />
+                    <h3 className="font-medium">Workflow Settings</h3>
+                  </div>
+                  <p className="text-sm text-white/80 mb-4">Adjust the creativity level for your workflows</p>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm">Conservative</span>
+                    <Slider 
+                      className="flex-1"
+                      value={sliderValue}
+                      onValueChange={setSliderValue}
+                      max={100}
+                      step={1}
+                    />
+                    <span className="text-sm">Creative</span>
+                  </div>
+                  <div className="text-center mt-1">
+                    <span className="text-xs text-white/80">{sliderValue[0]}%</span>
+                  </div>
                 </div>
-                <div className="text-center mt-1">
-                  <span className="text-xs text-white/80">{sliderValue[0]}%</span>
+              </section>
+            </div>
+          </div>
+          
+          <div className="py-8 bg-white flex-1">
+            <div className="container mx-auto px-4">
+              <section>
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-medium text-gray-800">Recent History</h2>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="hover:bg-gray-100 text-gray-700"
+                    onClick={() => navigate("/history")}
+                  >
+                    View All
+                  </Button>
                 </div>
-              </div>
-            </section>
-            
-            <section>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-medium text-white">Recent History</h2>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="hover:bg-white/30 text-white hover:text-white"
-                  onClick={() => navigate("/history")}
-                >
-                  View All
-                </Button>
-              </div>
-              
-              <div className="bg-white/20 backdrop-blur-sm rounded-lg shadow-sm border border-white/30">
-                {historyData.map((item) => (
-                  <HistoryItem
-                    key={item.id}
-                    title={item.title}
-                    workflowType={item.workflowType}
-                    timestamp={item.timestamp}
-                    icon={item.icon}
-                    status={item.status}
-                    isFavorite={item.isFavorite}
-                    onClick={() => {
-                      console.log(`History item clicked: ${item.id}`);
-                      setCurrentWorkflow({
-                        id: item.id,
-                        title: item.workflowType,
-                        description: item.title,
-                        icon: item.icon
-                      });
-                      setShowChat(true);
-                    }}
-                    onFavoriteToggle={() => toggleFavorite(item.id)}
-                    onRename={(newName) => renameHistoryItem(item.id, newName)}
-                  />
-                ))}
-              </div>
-            </section>
-          </main>
+                
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+                  {historyData.map((item) => (
+                    <HistoryItem
+                      key={item.id}
+                      title={item.title}
+                      workflowType={item.workflowType}
+                      timestamp={item.timestamp}
+                      icon={item.icon}
+                      status={item.status}
+                      isFavorite={item.isFavorite}
+                      onClick={() => {
+                        console.log(`History item clicked: ${item.id}`);
+                        setCurrentWorkflow({
+                          id: item.id,
+                          title: item.workflowType,
+                          description: item.title,
+                          icon: item.icon
+                        });
+                        setShowChat(true);
+                      }}
+                      onFavoriteToggle={() => toggleFavorite(item.id)}
+                      onRename={(newName) => renameHistoryItem(item.id, newName)}
+                    />
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
 
           <NewWorkflowDialog
             open={showNewWorkflowDialog}
