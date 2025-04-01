@@ -1,6 +1,6 @@
 
 from pydantic import BaseSettings, PostgresDsn
-from typing import Optional
+from typing import Optional, List
 import os
 from dotenv import load_dotenv
 
@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     
     # Azure specific configuration
     AZURE_DEPLOYMENT: bool = os.getenv("AZURE_DEPLOYMENT", "false").lower() == "true"
+    ROOT_PATH: str = os.getenv("ROOT_PATH", "")
     
     # JWT
     JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "your-secret-key-change-in-production")
@@ -26,8 +27,8 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     
     # CORS
-    BACKEND_CORS_ORIGINS: list = ["*"]  # In production, replace with specific origins
-    ALLOWED_HOSTS: list = ["*"]  # For Azure App Service
+    BACKEND_CORS_ORIGINS: List[str] = ["*"]  # In production, replace with specific origins
+    ALLOWED_HOSTS: List[str] = ["*"]  # For Azure App Service
 
     class Config:
         case_sensitive = True

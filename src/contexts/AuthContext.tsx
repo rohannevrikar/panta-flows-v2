@@ -117,7 +117,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const updatedUser = await authService.updateProfile(userData);
       setUser(prev => prev ? { ...prev, ...updatedUser } : null);
-      localStorage.setItem("user_info", JSON.stringify(updatedUser));
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       console.error("Profile update error:", error);

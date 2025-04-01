@@ -11,7 +11,7 @@ app = FastAPI(
     title="Panta Backend API",
     description="Backend services for the Panta application",
     version="1.0.0",
-    root_path=os.getenv("ROOT_PATH", ""),  # For Azure deployment behind proxy
+    root_path=settings.ROOT_PATH,  # For Azure deployment behind proxy
 )
 
 # Configure CORS
