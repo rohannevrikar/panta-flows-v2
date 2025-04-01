@@ -7,10 +7,14 @@ import React, {
   ReactNode,
 } from "react";
 import { authService, User } from "@/services/authService";
-import { userService } from "@/services/userService";
-import { UserRole, UserSettings } from "@/services/types";
+import { UserRole } from "@/services/types";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+
+interface UserSettings {
+  notifications: boolean;
+  theme: string;
+}
 
 // Update User interface to include settings
 interface ExtendedUser extends User {
@@ -95,7 +99,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithEmailPassword = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await authService.login({ email, password });
+      const response = await authService.login(email, password);
 
       const extendedUser: ExtendedUser = {
         ...response.user,
@@ -169,7 +173,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      const response = await authService.register({ email, password, name });
+      const response = await authService.register(email, password, name);
 
       const extendedUser: ExtendedUser = {
         ...response.user,

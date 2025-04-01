@@ -8,11 +8,23 @@ import {
   GoogleAuthProvider,
   sendPasswordResetEmail,
   updateProfile,
-  User
+  User as FirebaseUser
 } from 'firebase/auth';
 
 // Import the Firebase authentication instance from the Firebase configuration
 import { auth } from '../config/firebase';
+
+export type UserRole = "super_admin" | "client_admin" | "user";
+
+// Define User interface for our application
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  role?: UserRole;
+  clientId?: string;
+}
 
 interface AuthResponse {
   user: User;
@@ -33,7 +45,14 @@ export const authService = {
       // Get the token
       const token = await user.getIdToken();
       
-      return { user, token };
+      const userData: User = {
+        id: user.uid,
+        name: displayName,
+        email: user.email || email,
+        role: "user"
+      };
+      
+      return { user: userData, token };
     } catch (error: any) {
       console.error('Registration error:', error);
       throw new Error(error.message || 'Failed to register');
@@ -45,25 +64,15 @@ export const authService = {
     try {
       // Special test account bypass
       if (email === 'arian@panta-rh.ai') {
-        // Create a mock user object that mimics Firebase User
-        const mockUser = {
-          uid: 'mock-user-id',
+        // Create a mock user object
+        const mockUser: User = {
+          id: 'mock-user-id',
+          name: 'Moin Arian',
           email: email,
-          displayName: 'Moin Arian',
-          emailVerified: true,
-          isAnonymous: false,
-          metadata: {
-            creationTime: new Date().toISOString(),
-            lastSignInTime: new Date().toISOString()
-          },
-          providerData: [],
-          refreshToken: 'mock-refresh-token',
-          phoneNumber: null,
-          photoURL: null,
-          tenantId: null,
-          providerId: 'password',
-          getIdToken: () => Promise.resolve('mock-token'),
-        } as unknown as User;
+          role: "client_admin",
+          clientId: "panta",
+          avatar: "https://avatar.iran.liara.run/public/boy"
+        };
 
         return {
           user: mockUser,
@@ -76,7 +85,15 @@ export const authService = {
       const { user } = userCredential;
       const token = await user.getIdToken();
       
-      return { user, token };
+      const userData: User = {
+        id: user.uid,
+        name: user.displayName || "User",
+        email: user.email || email,
+        avatar: user.photoURL || undefined,
+        role: "user"
+      };
+      
+      return { user: userData, token };
     } catch (error: any) {
       console.error('Login error:', error);
       throw new Error(error.message || 'Failed to login');
@@ -91,7 +108,15 @@ export const authService = {
       const { user } = userCredential;
       const token = await user.getIdToken();
       
-      return { user, token };
+      const userData: User = {
+        id: user.uid,
+        name: user.displayName || "User",
+        email: user.email || "",
+        avatar: user.photoURL || undefined,
+        role: "user"
+      };
+      
+      return { user: userData, token };
     } catch (error: any) {
       console.error('Google login error:', error);
       throw new Error(error.message || 'Failed to login with Google');
@@ -117,4 +142,30 @@ export const authService = {
       throw new Error(error.message || 'Failed to send password reset email');
     }
   },
+  
+  // Get the current user information
+  getCurrentUser: async (): Promise<User | null> => {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      return null;
+    }
+    
+    const userData: User = {
+      id: user.uid,
+      name: user.displayName || "User",
+      email: user.email || "",
+      avatar: user.photoURL || undefined,
+      role: "user"
+    };
+    
+    return userData;
+  },
+  
+  // Update user profile
+  updateProfile: async (userData: Partial<User>): Promise<User> => {
+    // In a real app, we would update the backend
+    // For now, we'll just return the updated user data
+    return userData as User;
+  }
 };

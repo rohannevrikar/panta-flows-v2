@@ -1,25 +1,28 @@
 
-import { apiRequest } from "./api";
 import { User } from "./authService";
 
+// In a real application, this service would make API calls to manage users
 export const userService = {
-  getMe: async (): Promise<User> => {
+  getCurrentUser: async (): Promise<User | null> => {
+    // Get user from localStorage
+    const userStr = localStorage.getItem("user_info");
+    if (!userStr) return null;
+    
     try {
-      const data = await apiRequest("/auth/me", "GET");
-      return data;
-    } catch (error) {
-      console.error("Error getting user data:", error);
-      throw error;
+      return JSON.parse(userStr) as User;
+    } catch {
+      return null;
     }
   },
   
   updateUser: async (userData: Partial<User>): Promise<User> => {
-    try {
-      const data = await apiRequest("/auth/profile", "PUT", userData);
-      return data;
-    } catch (error) {
-      console.error("Error updating user:", error);
-      throw error;
-    }
+    // In a real app, we'd update the user via API
+    // For now, we'll simulate by updating local storage
+    const userStr = localStorage.getItem("user_info");
+    const user = userStr ? JSON.parse(userStr) : {};
+    const updatedUser = { ...user, ...userData };
+    
+    localStorage.setItem("user_info", JSON.stringify(updatedUser));
+    return updatedUser as User;
   }
 };

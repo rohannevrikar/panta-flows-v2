@@ -1,7 +1,7 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTheme } from '@/contexts/ThemeContext';
-import { UserRole } from '@/services/types';
 
 const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
@@ -25,7 +25,7 @@ const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ childre
           // We won't need to set it since it's already handled by ThemeContext
           
           // For client admins, ensure their workflows are created
-          if (user.role === "client_admin" as UserRole) {
+          if (user.role === 'client_admin') {
             // In a real implementation, we would check for workflows and create them if needed
             // const workflows = await workflowService.getWorkflows();
             // if (!workflows || workflows.length === 0) {
