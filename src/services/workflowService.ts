@@ -1,6 +1,5 @@
 
 import { apiRequest } from "./api";
-import { LucideIcon } from "lucide-react";
 
 export interface Workflow {
   id: string;
@@ -14,28 +13,30 @@ export interface Workflow {
   isFavorite: boolean;
 }
 
-export const workflowService = {
-  getWorkflows: () => {
+class WorkflowService {
+  async getWorkflows(): Promise<Workflow[]> {
     return apiRequest("/workflows");
-  },
+  }
   
-  getWorkflowById: (id: string) => {
+  async getWorkflowById(id: string): Promise<Workflow> {
     return apiRequest(`/workflows/${id}`);
-  },
+  }
   
-  createWorkflow: (workflow: Partial<Workflow>) => {
+  async createWorkflow(workflow: Partial<Workflow>): Promise<Workflow> {
     return apiRequest("/workflows", "POST", workflow);
-  },
+  }
   
-  updateWorkflow: (id: string, workflow: Partial<Workflow>) => {
+  async updateWorkflow(id: string, workflow: Partial<Workflow>): Promise<Workflow> {
     return apiRequest(`/workflows/${id}`, "PUT", workflow);
-  },
+  }
   
-  deleteWorkflow: (id: string) => {
+  async deleteWorkflow(id: string): Promise<void> {
     return apiRequest(`/workflows/${id}`, "DELETE");
-  },
+  }
   
-  toggleFavorite: (id: string, isFavorite: boolean) => {
+  async toggleFavorite(id: string, isFavorite: boolean): Promise<Workflow> {
     return apiRequest(`/workflows/${id}/favorite`, "PUT", { isFavorite });
-  },
-};
+  }
+}
+
+export const workflowService = new WorkflowService();

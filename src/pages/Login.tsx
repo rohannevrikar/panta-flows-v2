@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
@@ -10,9 +9,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { getClientConfig } from "@/lib/client-themes";
 
 const Login = () => {
-  const { theme } = useTheme();
+  const { theme, clientId } = useTheme();
+  const clientConfig = getClientConfig(clientId);
   const navigate = useNavigate();
   const { toast } = useToast();
   const { login, loginWithGoogle } = useAuth();
@@ -63,7 +64,7 @@ const Login = () => {
           </h1>
           
           <p className="text-white/90 text-xl max-w-md mt-4 leading-relaxed">
-            Unleash your creativity with AI-powered workflows designed for modern teams
+            {clientConfig.landingPageText || "Unleash your creativity with AI-powered workflows designed for modern teams"}
           </p>
 
           {/* Modern "prompt tag" design */}

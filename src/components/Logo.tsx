@@ -1,6 +1,7 @@
 
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface LogoProps {
   className?: string;
@@ -10,6 +11,8 @@ interface LogoProps {
 }
 
 const Logo = ({ className, variant = "default", onClick, small = false }: LogoProps) => {
+  const { theme } = useTheme();
+  
   return (
     <Link to="/dashboard" className="no-underline">
       <div 
@@ -20,8 +23,8 @@ const Logo = ({ className, variant = "default", onClick, small = false }: LogoPr
         )}
       >
         <img 
-          src="/panta-logo.png" 
-          alt="Panta Rhai Logo" 
+          src={theme.logo || "/panta-logo.png"} 
+          alt={`${theme.clientName} Logo`} 
           className={cn(small ? "h-7 mr-1" : "h-10 mr-2")} 
         />
         {!small && (
@@ -29,11 +32,15 @@ const Logo = ({ className, variant = "default", onClick, small = false }: LogoPr
             <span className={cn(
               "mr-1 tracking-wider", 
               variant === "white" ? "text-white" : "text-black"
-            )}>PANTA</span>
-            <span className={cn(
-              "font-light tracking-wider", 
-              variant === "white" ? "text-white" : "text-black"
-            )}>RHAI</span>
+            )}>
+              {theme.clientName.toUpperCase()}
+            </span>
+            {theme.clientName.toLowerCase() === "panta" && (
+              <span className={cn(
+                "font-light tracking-wider", 
+                variant === "white" ? "text-white" : "text-black"
+              )}>RHAI</span>
+            )}
           </>
         )}
       </div>

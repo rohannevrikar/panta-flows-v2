@@ -1,7 +1,7 @@
 
 import React from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { getClientTheme, clientThemes } from "@/lib/client-themes";
+import { clientConfigs } from "@/lib/client-themes";
 import { Button } from "@/components/ui/button";
 import { Palette } from "lucide-react";
 
@@ -10,7 +10,7 @@ interface ThemeSwitcherProps {
 }
 
 const ThemeSwitcher = ({ visible = false }: ThemeSwitcherProps) => {
-  const { updateTheme } = useTheme();
+  const { setClientId } = useTheme();
   
   if (!visible) return null;
 
@@ -20,14 +20,14 @@ const ThemeSwitcher = ({ visible = false }: ThemeSwitcherProps) => {
         <Palette size={14} /> Client Theme
       </div>
       <div className="flex flex-wrap gap-2">
-        {Object.keys(clientThemes).map((clientId) => (
+        {Object.keys(clientConfigs).map((clientId) => (
           <Button
             key={clientId}
             size="sm"
             variant="outline"
-            onClick={() => updateTheme(getClientTheme(clientId))}
+            onClick={() => setClientId(clientId)}
           >
-            {clientThemes[clientId].clientName}
+            {clientConfigs[clientId].theme.clientName}
           </Button>
         ))}
       </div>
