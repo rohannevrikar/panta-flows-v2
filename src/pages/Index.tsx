@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Bot, 
   Code, 
@@ -19,6 +19,8 @@ import HistoryItem from "@/components/HistoryItem";
 import Logo from "@/components/Logo";
 import ChatInterface from "@/components/ChatInterface";
 import { Slider } from "@/components/ui/slider";
+import NewWorkflowDialog from "@/components/NewWorkflowDialog";
+import { toast } from "sonner";
 
 const workflows = [
   {
@@ -103,6 +105,8 @@ const Index = () => {
   const [showChat, setShowChat] = useState(false);
   const [historyData, setHistoryData] = useState(historyItems);
   const [sliderValue, setSliderValue] = useState([50]);
+  const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
+  const [availableWorkflows, setAvailableWorkflows] = useState(workflows);
   
   const handleSearchFocus = () => {
     setShowChat(true);
@@ -127,11 +131,34 @@ const Index = () => {
       )
     );
   };
-  
-  useState(() => {
+
+  const handleCreateWorkflow = (workflowData: any) => {
+    const iconComponent = {
+      "Chat": MessageSquare,
+      "Code": Code,
+      "Image": Image,
+      "Document": FileText,
+      "Video": Video,
+      "Music": Music,
+      "Bot": Bot
+    }[workflowData.selectedIcon];
+
+    const newWorkflow = {
+      id: `workflow-${Date.now()}`,
+      title: workflowData.title,
+      description: workflowData.description,
+      icon: iconComponent,
+      color: workflowData.iconColor
+    };
+
+    setAvailableWorkflows(prev => [...prev, newWorkflow]);
+    toast.success("New workflow created successfully!");
+  };
+
+  useEffect(() => {
     setShowChat(false);
-  });
-  
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50">
       {showChat ? (
@@ -157,7 +184,11 @@ const Index = () => {
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-medium">Workflows</h2>
-                <Button variant="outline" className="gap-1">
+                <Button 
+                  variant="outline" 
+                  className="gap-1"
+                  onClick={() => setShowNewWorkflowDialog(true)}
+                >
                   <Plus className="h-4 w-4" />
                   New Workflow
                 </Button>
@@ -172,12 +203,13 @@ const Index = () => {
                 
                 <TabsContent value="all" className="animate-fade-in">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-                    {workflows.map((workflow) => (
+                    {availableWorkflows.map((workflow) => (
                       <WorkflowCard
                         key={workflow.id}
                         title={workflow.title}
                         description={workflow.description}
                         icon={workflow.icon}
+                        color={workflow.color}
                         onClick={() => {
                           console.log(`Workflow clicked: ${workflow.id}`);
                           setShowChat(true);
@@ -274,6 +306,12 @@ const Index = () => {
               </div>
             </section>
           </main>
+
+          <NewWorkflowDialog
+            open={showNewWorkflowDialog}
+            onClose={() => setShowNewWorkflowDialog(false)}
+            onCreateWorkflow={handleCreateWorkflow}
+          />
         </>
       )}
     </div>
