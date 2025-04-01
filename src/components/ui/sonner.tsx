@@ -26,7 +26,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
         style: {
           // Use theme colors for the action button
           '--toast-primary': theme.primaryColor
-        }
+        } as React.CSSProperties
       }}
       {...props}
     />
