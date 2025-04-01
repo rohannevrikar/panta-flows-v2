@@ -1,64 +1,63 @@
 
-import React, { useEffect } from "react";
+import { useState, useEffect, ReactNode } from "react";
 import { useTheme } from "@/contexts/ThemeContext";
-import { getClientWorkflows } from "@/lib/client-themes";
-import { useToast } from "@/hooks/use-toast";
+import { getClientConfig } from "@/lib/client-themes";
 import { workflowService } from "@/services/workflowService";
-import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 
 interface ClientWorkflowLoaderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 const ClientWorkflowLoader = ({ children }: ClientWorkflowLoaderProps) => {
   const { clientId } = useTheme();
-  const { toast } = useToast();
-  const { user } = useAuth();
-  
-  // Load client-specific workflows when user logs in
+  const [isLoading, setIsLoading] = useState(false);
+
   useEffect(() => {
     const loadClientWorkflows = async () => {
-      // Only proceed if user is logged in
-      if (!user) return;
-      
       try {
-        // Get existing workflows
-        const existingWorkflows = await workflowService.getWorkflows();
+        setIsLoading(true);
+        const clientConfig = getClientConfig(clientId);
         
-        // Get client-specific workflows
-        const clientWorkflows = getClientWorkflows(clientId);
-        
-        // Only add workflows that don't exist yet (by title)
-        const existingTitles = existingWorkflows.map(wf => wf.title);
-        
-        // Filter out workflows that already exist
-        const newWorkflows = clientWorkflows.filter(
-          wf => !existingTitles.includes(wf.title)
-        );
-        
-        // Add each new workflow
-        for (const workflow of newWorkflows) {
-          await workflowService.createWorkflow({
-            title: workflow.title,
-            description: workflow.description,
-            iconName: workflow.iconName,
-            color: workflow.color,
-          });
+        if (!clientConfig) {
+          console.warn("Client configuration not found for ID:", clientId);
+          return;
         }
         
-        if (newWorkflows.length > 0) {
-          toast({
-            title: "Client workflows added",
-            description: `${newWorkflows.length} workflows for ${clientId} have been added to your account.`,
-          });
+        // Check if client has specific workflows defined
+        if (clientConfig.workflows && clientConfig.workflows.length > 0) {
+          console.log("Loading client-specific workflows for client:", clientId);
+          
+          // Get existing workflows to avoid duplicates
+          const existingWorkflows = await workflowService.getWorkflows();
+          const existingTitles = new Set(existingWorkflows.map(w => w.title));
+          
+          // Filter workflows that don't already exist
+          const newWorkflows = clientConfig.workflows.filter(
+            workflow => !existingTitles.has(workflow.title)
+          );
+          
+          // Add new workflows if needed
+          if (newWorkflows.length > 0) {
+            for (const workflow of newWorkflows) {
+              await workflowService.createWorkflow(workflow);
+            }
+            toast.success(`${newWorkflows.length} client workflows loaded`);
+          }
         }
       } catch (error) {
         console.error("Error loading client workflows:", error);
+        toast.error("Failed to load client workflows");
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    loadClientWorkflows();
-  }, [clientId, user, toast]);
+    // Only load workflows if we have a clientId
+    if (clientId) {
+      loadClientWorkflows();
+    }
+  }, [clientId]);
 
   return <>{children}</>;
 };
