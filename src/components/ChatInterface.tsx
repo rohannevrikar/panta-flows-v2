@@ -1,11 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Bot, User, ChevronRight, X } from "lucide-react";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { User, X } from "lucide-react";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import ChatSidebar from "./ChatSidebar";
 import SearchChat from "./SearchChat";
-import { Collapsible } from "@/components/ui/collapsible";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
@@ -18,11 +17,27 @@ interface Message {
   timestamp: Date;
 }
 
-interface ChatInterfaceProps {
-  onClose?: () => void;
+interface ConversationStarter {
+  id: string;
+  text: string;
 }
 
-const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
+interface ChatInterfaceProps {
+  onClose?: () => void;
+  workflowTitle?: string;
+  conversationStarters?: ConversationStarter[];
+}
+
+const ChatInterface = ({ 
+  onClose, 
+  workflowTitle = "Chat Assistant",
+  conversationStarters = [
+    { id: "1", text: "Generate a marketing strategy for my business" },
+    { id: "2", text: "Help me draft an email to a client" },
+    { id: "3", text: "Summarize this article for me" },
+    { id: "4", text: "Create a to-do list for my project" }
+  ]
+}: ChatInterfaceProps) => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -32,6 +47,9 @@ const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
       timestamp: new Date(),
     },
   ]);
+  
+  const [input, setInput] = useState("");
+  const [showStarters, setShowStarters] = useState(true);
 
   const handleClose = () => {
     if (onClose) {
@@ -40,15 +58,43 @@ const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
       navigate("/dashboard");
     }
   };
+  
+  const handleStarterClick = (text: string) => {
+    setInput(text);
+    setShowStarters(false);
+    // In a real application, we would also send the message to the backend
+    const newMessage: Message = {
+      id: `user-${Date.now()}`,
+      sender: "user",
+      content: text,
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    
+    // Simulate bot response
+    setTimeout(() => {
+      const botReply: Message = {
+        id: `bot-${Date.now()}`,
+        sender: "bot",
+        content: "I'm processing your request. Here's what I can help you with...",
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, botReply]);
+    }, 1000);
+  };
 
   return (
-    <div className="h-[calc(100vh-5rem)] w-full flex flex-col">
+    <div className="h-screen w-full flex flex-col bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm">
+      <header className="bg-white shadow-sm z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Logo />
           
-          <div className="text-xl font-medium panta-gradient-text">Moin Arian</div>
+          <div className="text-xl font-medium panta-gradient-text">
+            {workflowTitle}
+          </div>
           
           <ProfileDropdown 
             name="Moin Arian" 
@@ -58,29 +104,31 @@ const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
       </header>
       
       {/* Chat Interface with Sidebar */}
-      <SidebarProvider defaultOpen={true} className="flex-1">
-        <div className="flex h-full bg-gray-50 relative">
+      <SidebarProvider defaultOpen={false} className="flex-1">
+        <div className="flex h-[calc(100vh-5rem)] bg-gray-50 relative">
           <ChatSidebar />
           
           <div className="flex-1 flex flex-col relative">
-            <div className="absolute top-4 left-4 z-10">
-              <SidebarTrigger />
-            </div>
-            
-            <div className="absolute top-4 right-4 z-10">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                onClick={handleClose}
-                className="rounded-full hover:bg-gray-200"
-              >
-                <X className="h-5 w-5" />
-                <span className="sr-only">Close chat</span>
-              </Button>
-            </div>
-            
-            <ScrollArea className="flex-1 p-4 pt-16">
+            <ScrollArea className="flex-1 p-4 pt-6">
               <div className="max-w-3xl mx-auto space-y-4">
+                {showStarters && messages.length === 1 && (
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold mb-4">{workflowTitle}</h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {conversationStarters.map((starter) => (
+                        <Button
+                          key={starter.id}
+                          variant="outline"
+                          className="text-left h-auto py-3 px-4 whitespace-normal"
+                          onClick={() => handleStarterClick(starter.text)}
+                        >
+                          {starter.text}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {messages.map((message) => (
                   <div
                     key={message.id}
@@ -103,7 +151,9 @@ const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
                         {message.sender === "user" ? (
                           <User className="h-5 w-5 text-white" />
                         ) : (
-                          <Bot className="h-5 w-5 text-panta-blue" />
+                          <div className="h-5 w-5 flex items-center justify-center">
+                            <Logo small />
+                          </div>
                         )}
                       </div>
                       <div
@@ -134,8 +184,23 @@ const ChatInterface = ({ onClose }: ChatInterfaceProps) => {
             </ScrollArea>
             
             <div className="border-t p-4 bg-white">
-              <SearchChat autoFocus={true} />
+              <SearchChat autoFocus={true} value={input} onChange={(e) => setInput(e.target.value)} />
+              <div className="text-xs text-center mt-3 text-gray-500">
+                PANTA Flows can make mistakes. Please check important information.
+              </div>
             </div>
+          </div>
+
+          <div className="absolute top-4 right-4 z-10">
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={handleClose}
+              className="rounded-full hover:bg-gray-200"
+            >
+              <X className="h-5 w-5" />
+              <span className="sr-only">Close chat</span>
+            </Button>
           </div>
         </div>
       </SidebarProvider>

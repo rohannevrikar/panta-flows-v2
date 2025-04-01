@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { 
   Plus, 
@@ -7,7 +8,8 @@ import {
   Image,
   FileText,
   Video,
-  Music
+  Music,
+  Star
 } from "lucide-react";
 
 import { 
@@ -25,15 +27,15 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import HistoryItem from "./HistoryItem";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useNavigate } from "react-router-dom";
 
 interface ChatHistoryItem {
   id: string;
   title: string;
   workflowType: string;
+  icon: React.ElementType;
   timestamp: Date;
-  icon: typeof MessageSquare;
   status: "completed" | "processing" | "failed";
   isFavorite: boolean;
 }
@@ -177,19 +179,20 @@ const ChatSidebar = () => {
             <div className="px-2">
               <div className="text-xs font-medium text-gray-500 mb-2 px-2">HISTORY</div>
               <ScrollArea className="h-[calc(100vh-320px)]">
-                <div className="p-2 space-y-2">
+                <div className="p-2 space-y-1">
                   {chatHistory.map((chat) => (
-                    <HistoryItem
-                      key={chat.id}
-                      title={chat.title}
-                      workflowType={chat.workflowType}
-                      timestamp={chat.timestamp}
-                      icon={chat.icon}
-                      status={chat.status}
-                      isFavorite={chat.isFavorite}
-                      onFavoriteToggle={() => toggleFavorite(chat.id)}
-                      onRename={(newName) => renameChat(chat.id, newName)}
-                    />
+                    <div 
+                      key={chat.id} 
+                      className="flex items-center px-2 py-2 rounded-md hover:bg-gray-100 cursor-pointer"
+                    >
+                      <div className="flex-shrink-0 mr-3 flex items-center">
+                        <chat.icon className="w-4 h-4 text-gray-500" />
+                      </div>
+                      <div className="flex-1 min-w-0 line-clamp-1 text-sm">{chat.title}</div>
+                      {chat.isFavorite && (
+                        <Star className="w-4 h-4 ml-2 text-amber-400 flex-shrink-0" />
+                      )}
+                    </div>
                   ))}
                 </div>
               </ScrollArea>
@@ -211,11 +214,25 @@ const ChatSidebar = () => {
               <ScrollArea className="h-[calc(100vh-280px)]">
                 <div className="p-2 space-y-2">
                   {chatHistory.map((chat) => (
-                    <SidebarMenuItem key={chat.id}>
-                      <SidebarMenuButton tooltip={chat.title}>
-                        <chat.icon size={18} />
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
+                    <TooltipProvider key={chat.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="relative flex justify-center">
+                            <Button
+                              variant="ghost" 
+                              size="icon"
+                              className="h-8 w-8 rounded-full"
+                            >
+                              <chat.icon className="h-4 w-4" />
+                              {chat.isFavorite && (
+                                <div className="absolute -top-1 -right-1 w-2 h-2 bg-amber-400 rounded-full"></div>
+                              )}
+                            </Button>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">{chat.title}</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ))}
                 </div>
               </ScrollArea>
