@@ -1,13 +1,13 @@
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/contexts/AuthContext';
 import { clientService } from '@/services/clientService';
 import { workflowService } from '@/services/workflowService';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { setTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

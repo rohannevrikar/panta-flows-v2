@@ -1,87 +1,63 @@
 
-import { ThemeConfig } from "../contexts/ThemeContext";
+import { IconName } from '@/frontend/utils/iconMap';
 
-// Define clients and their themes
-const clientThemes: Record<string, ThemeConfig> = {
-  "panta": {
-    primaryColor: "#191919",
-    secondaryColor: "#FFFFFF",
-    accentColor: "#629FE7",
-    clientName: "PANTA",
-    tagline: "discover designInspiration"
+export interface ClientTheme {
+  id: string;
+  name: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  logo?: string;
+  tagline?: string;
+  landingPageText?: string;
+}
+
+export interface ClientConfig {
+  id: string;
+  name: string;
+  logo?: string;
+  landingPageText?: string;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  tagline?: string;
+}
+
+const defaultConfig: ClientConfig = {
+  id: 'default',
+  name: 'Default Theme',
+  primaryColor: '#0f172a',
+  secondaryColor: '#f8fafc',
+  accentColor: '#3b82f6',
+  tagline: 'Discover new possibilities',
+  landingPageText: 'AI-powered workflows designed for the modern workspace.'
+};
+
+const clientConfigs: Record<string, ClientConfig> = {
+  default: defaultConfig,
+  panta: {
+    id: 'panta',
+    name: 'Panta',
+    logo: '/panta-logo.png',
+    primaryColor: '#4f46e5',
+    secondaryColor: '#ffffff',
+    accentColor: '#818cf8',
+    tagline: 'discover designInspiration',
+    landingPageText: 'Unleash your creativity with AI-powered workflows designed for modern teams.'
   },
-  "zettaVal": {
-    primaryColor: "#2D2D64",
-    secondaryColor: "#F2F2F2",
-    accentColor: "#F26430",
-    clientName: "ZettaVal",
-    tagline: "Powering the future of AI"
-  },
-  "cloudVision": {
-    primaryColor: "#075E54",
-    secondaryColor: "#FFFFFF",
-    accentColor: "#25D366",
-    clientName: "CloudVision",
-    tagline: "Smart data for smart decisions"
-  },
-  "neuroCraft": {
-    primaryColor: "#4A1D96",
-    secondaryColor: "#F2F2F2",
-    accentColor: "#D946EF",
-    clientName: "NeuroCraft",
-    tagline: "Crafting intelligent solutions"
-  },
-  "default": {
-    primaryColor: "#191919",
-    secondaryColor: "#FFFFFF",
-    accentColor: "#3B82F6",
-    clientName: "AI Platform",
-    tagline: "Empowering with AI"
+  acme: {
+    id: 'acme',
+    name: 'ACME Corp',
+    logo: '/acme-logo.png',
+    primaryColor: '#10b981',
+    secondaryColor: '#f0fdfa',
+    accentColor: '#34d399',
+    tagline: 'Work smarter, not harder',
+    landingPageText: 'Streamline your workflow with our AI-powered tools designed for productivity.'
   }
 };
 
-/**
- * Get a client's theme configuration
- * @param clientId - The client identifier
- * @returns The theme configuration for the specified client
- */
-export const getClientTheme = (clientId: string): ThemeConfig => {
-  return clientThemes[clientId] || clientThemes.default;
-};
-
-/**
- * Get client configuration information
- * @param clientId - The client identifier
- * @returns Additional client configuration
- */
-export const getClientConfig = (clientId: string) => {
-  const configs: Record<string, any> = {
-    "panta": {
-      landingPageText: "Unleash your creativity with AI-powered workflows designed for modern teams",
-      maxWorkflows: 50,
-      features: ["premium-models", "custom-workflows", "team-sharing"]
-    },
-    "zettaVal": {
-      landingPageText: "Enterprise AI solutions for data-driven companies",
-      maxWorkflows: 100,
-      features: ["premium-models", "custom-workflows", "team-sharing", "enterprise-support"]
-    },
-    "cloudVision": {
-      landingPageText: "Simplify complex data with AI-powered analysis",
-      maxWorkflows: 25,
-      features: ["premium-models", "basic-workflows"]
-    },
-    "neuroCraft": {
-      landingPageText: "Creative AI solutions for innovative companies",
-      maxWorkflows: 40,
-      features: ["premium-models", "custom-workflows", "creative-tools"]
-    },
-    "default": {
-      landingPageText: "AI-powered workflows for every need",
-      maxWorkflows: 10,
-      features: ["basic-workflows"]
-    }
-  };
-
-  return configs[clientId] || configs.default;
+export const getClientConfig = (clientId?: string): ClientConfig => {
+  if (!clientId) return defaultConfig;
+  return clientConfigs[clientId] || defaultConfig;
 };

@@ -1,4 +1,3 @@
-
 import { 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -26,7 +25,7 @@ export interface User {
   email: string;
   avatar?: string;
   role?: UserRole;
-  client_id?: string;
+  clientId?: string;
 }
 
 // Handle Firebase auth errors with readable messages
@@ -58,7 +57,7 @@ const mapFirebaseUserToUser = (firebaseUser: FirebaseUser, additionalData?: any)
     email: firebaseUser.email || "",
     avatar: firebaseUser.photoURL || undefined,
     role: additionalData?.role || "user",
-    client_id: additionalData?.client_id,
+    clientId: additionalData?.clientId || additionalData?.client_id,
   };
 };
 
@@ -69,12 +68,11 @@ export const authService = {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const token = await getIdToken(userCredential.user);
       
-      // In a real backend implementation, you would fetch the user's role and client_id
+      // In a real backend implementation, you would fetch the user's role and clientId
       // from your database. For now, we'll simulate this with some default values
-      // You would replace this with an API call to your backend
       const userData = {
         role: "user",
-        client_id: localStorage.getItem("client_id") || "panta",
+        clientId: localStorage.getItem("client_id") || "panta",
       };
       
       const user = mapFirebaseUserToUser(userCredential.user, userData);
@@ -97,11 +95,11 @@ export const authService = {
       const userCredential = await signInWithPopup(auth, provider);
       const token = await getIdToken(userCredential.user);
       
-      // In a real backend implementation, you would fetch the user's role and client_id
+      // In a real backend implementation, you would fetch the user's role and clientId
       // You would replace this with an API call to your backend
       const userData = {
         role: "user",
-        client_id: localStorage.getItem("client_id") || "panta",
+        clientId: localStorage.getItem("client_id") || "panta",
       };
       
       const user = mapFirebaseUserToUser(userCredential.user, userData);
@@ -142,11 +140,11 @@ export const authService = {
       
       const token = await getIdToken(userCredential.user);
       
-      // In a real implementation, you would set the user's role and client_id
+      // In a real implementation, you would set the user's role and clientId
       // based on your business logic or admin configurations
       const additionalData = {
         role: "user",
-        client_id: localStorage.getItem("client_id") || "panta",
+        clientId: localStorage.getItem("client_id") || "panta",
       };
       
       const user = mapFirebaseUserToUser(userCredential.user, additionalData);
@@ -170,12 +168,12 @@ export const authService = {
         
         if (firebaseUser) {
           try {
-            // In a real implementation, you would fetch the user's role and client_id
+            // In a real implementation, you would fetch the user's role and clientId
             // from your backend API
             const storedUser = localStorage.getItem("user_info");
             const additionalData = storedUser ? JSON.parse(storedUser) : {
               role: "user",
-              client_id: localStorage.getItem("client_id") || "panta",
+              clientId: localStorage.getItem("client_id") || "panta",
             };
             
             const user = mapFirebaseUserToUser(firebaseUser, additionalData);
@@ -208,13 +206,13 @@ export const authService = {
         photoURL: userData.avatar || currentUser.photoURL,
       });
       
-      // Get existing stored user data to preserve role and client_id
+      // Get existing stored user data to preserve role and clientId
       const storedUserStr = localStorage.getItem("user_info");
       const storedUser = storedUserStr ? JSON.parse(storedUserStr) : {};
       
       const updatedUser = mapFirebaseUserToUser(currentUser, {
         role: userData.role || storedUser.role || "user",
-        client_id: userData.client_id || storedUser.client_id,
+        clientId: userData.clientId || storedUser.clientId || storedUser.client_id,
       });
       
       localStorage.setItem("user_info", JSON.stringify(updatedUser));

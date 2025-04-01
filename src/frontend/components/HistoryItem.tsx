@@ -1,139 +1,79 @@
 
 import React from 'react';
-import { Star, MoreVertical, Pencil, Clock, ChevronRight } from 'lucide-react';
-import { Button } from '@/frontend/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/frontend/components/ui/dropdown-menu';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/frontend/components/ui/tooltip';
-import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { Card, CardContent } from '@/frontend/components/ui/card';
+import { Badge } from '@/frontend/components/ui/badge';
 import { getIconByName } from '@/frontend/utils/iconMap';
 
-export type HistoryItemStatus = 'completed' | 'processing' | 'failed';
+export type HistoryItemStatus = 'completed' | 'in-progress' | 'error' | 'pending';
 
-interface HistoryItemProps {
+export interface HistoryItemProps {
+  id: string;
   title: string;
-  workflowType: string;
-  timestamp: string;
-  icon: string; // Icon name from Lucide
+  iconName?: string;
+  timestamp: Date;
   status: HistoryItemStatus;
-  isFavorite: boolean;
-  onClick: () => void;
-  onFavoriteToggle: () => void;
-  onRename?: () => void;
+  onClick?: (id: string) => void;
 }
 
 const HistoryItem: React.FC<HistoryItemProps> = ({
+  id,
   title,
-  workflowType,
+  iconName = 'MessageSquare',
   timestamp,
-  icon,
   status,
-  isFavorite,
-  onClick,
-  onFavoriteToggle,
-  onRename,
+  onClick
 }) => {
-  const IconComponent = getIconByName(icon);
+  const Icon = getIconByName(iconName);
   
-  const statusStyles = {
-    completed: "bg-green-100 text-green-700",
-    processing: "bg-blue-100 text-blue-700",
-    failed: "bg-red-100 text-red-700",
+  const getStatusColor = (status: HistoryItemStatus) => {
+    switch (status) {
+      case 'completed': return 'bg-green-100 text-green-800';
+      case 'in-progress': return 'bg-blue-100 text-blue-800';
+      case 'error': return 'bg-red-100 text-red-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
   };
 
-  const statusLabels = {
-    completed: "Abgeschlossen",
-    processing: "In Bearbeitung",
-    failed: "Fehler",
+  const getStatusText = (status: HistoryItemStatus) => {
+    switch (status) {
+      case 'completed': return 'Completed';
+      case 'in-progress': return 'In Progress';
+      case 'error': return 'Error';
+      case 'pending': return 'Pending';
+      default: return 'Unknown';
+    }
+  };
+
+  const handleClick = () => {
+    if (onClick) {
+      onClick(id);
+    }
   };
 
   return (
-    <div 
-      className={cn(
-        "flex items-center justify-between p-4 border-b border-gray-200 hover:bg-gray-50 transition-colors cursor-pointer",
-      )}
-      onClick={onClick}
+    <Card 
+      className={`mb-3 hover:shadow-md transition-shadow cursor-pointer ${status === 'error' ? 'border-red-300' : ''}`}
+      onClick={handleClick}
     >
-      <div className="flex items-center space-x-4 min-w-0">
-        <div className="flex-shrink-0">
-          <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center text-gray-500">
-            {IconComponent && <IconComponent size={20} />}
+      <CardContent className="p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="p-2 bg-gray-100 rounded-full">
+            <Icon size={18} />
+          </div>
+          <div>
+            <h3 className="font-medium text-sm">{title}</h3>
+            <p className="text-xs text-gray-500">
+              {formatDistanceToNow(timestamp, { addSuffix: true })}
+            </p>
           </div>
         </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-medium text-gray-900 truncate">{title}</h3>
-          <div className="mt-1 flex items-center text-xs text-gray-500 space-x-2">
-            <span>{workflowType}</span>
-            <span className="inline-block w-1 h-1 bg-gray-300 rounded-full"></span>
-            <span className="flex items-center">
-              <Clock size={12} className="mr-1" />
-              {timestamp}
-            </span>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex items-center space-x-2">
-        <div className={cn(
-          "text-xs px-2 py-1 rounded-full", 
-          statusStyles[status]
-        )}>
-          {statusLabels[status]}
-        </div>
-        
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild onClick={(e) => { e.stopPropagation(); onFavoriteToggle(); }}>
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="hover:bg-transparent"
-              >
-                <Star 
-                  size={18} 
-                  className={cn(
-                    isFavorite ? "fill-yellow-400 text-yellow-400" : "text-gray-400"
-                  )} 
-                />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{isFavorite ? "Von Favoriten entfernen" : "Als Favorit markieren"}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="hover:bg-transparent">
-              <MoreVertical size={18} className="text-gray-400" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {onRename && (
-              <>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onRename?.(); }}>
-                  <Pencil size={14} className="mr-2" />
-                  Umbenennen
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onFavoriteToggle(); }}>
-              <Star size={14} className="mr-2" />
-              {isFavorite ? "Von Favoriten entfernen" : "Als Favorit markieren"}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="text-gray-400 hover:bg-transparent"
-        >
-          <ChevronRight size={18} />
-        </Button>
-      </div>
-    </div>
+        <Badge className={getStatusColor(status)}>
+          {getStatusText(status)}
+        </Badge>
+      </CardContent>
+    </Card>
   );
 };
 

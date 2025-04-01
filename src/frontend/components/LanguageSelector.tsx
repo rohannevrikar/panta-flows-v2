@@ -1,43 +1,42 @@
 
-import React, { useState } from 'react';
-import { Globe } from 'lucide-react';
-import { Button } from '@/frontend/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/frontend/components/ui/dropdown-menu';
+import React from 'react';
 import { useLanguage } from '@/frontend/contexts/LanguageContext';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/frontend/components/ui/select';
 
-const LanguageSelector = () => {
-  const { language, setLanguage, languages } = useLanguage();
-  const [isOpen, setIsOpen] = useState(false);
+export interface Language {
+  code: string;
+  name: string;
+  flag?: string;
+}
 
+const LanguageSelector: React.FC = () => {
+  const { language, changeLanguage, availableLanguages } = useLanguage();
+  
   const handleLanguageChange = (value: string) => {
-    setLanguage(value);
-    setIsOpen(false);
+    // Find the language object that matches the selected code
+    const selectedLanguage = availableLanguages.find(lang => lang.code === value);
+    if (selectedLanguage) {
+      changeLanguage(selectedLanguage);
+    }
   };
 
   return (
-    <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
-      <DropdownMenuTrigger asChild>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="relative"
-          aria-label="Select language"
-        >
-          <Globe size={18} />
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Language</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup value={language} onValueChange={handleLanguageChange}>
-          {languages.map((lang) => (
-            <DropdownMenuRadioItem key={lang.code} value={lang.code}>
-              {lang.label}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Select value={language?.code || 'en'} onValueChange={handleLanguageChange}>
+      <SelectTrigger className="w-[180px]">
+        <SelectValue placeholder="Select language">
+          {language?.flag && <span className="mr-2">{language.flag}</span>}
+          {language?.name || 'English'}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        {availableLanguages.map((lang) => (
+          <SelectItem key={lang.code} value={lang.code}>
+            {lang.flag && <span className="mr-2">{lang.flag}</span>}
+            {lang.name}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

@@ -1,51 +1,56 @@
 
 import { 
-  Bot, 
-  Code, 
-  FileText, 
-  Image, 
-  MessageSquare, 
-  Music, 
-  Video,
-  History,
-  Settings,
-  User,
-  Mail,
-  FileType,
-  FileImage,
-  FileAudio,
-  FileVideo,
-  File,
-  BarChart,
-  Globe,
-  Zap,
+  MessageSquare, FileText, Settings, 
+  History, Search, Upload, Code, 
+  Bot, Brain, Database, Server,
+  Users, User, Home, Lock,
+  FileQuestion, HelpCircle, FileImage,
   LucideIcon
 } from "lucide-react";
 
-export const iconMap: Record<string, LucideIcon> = {
-  "Bot": Bot,
-  "Code": Code,
-  "Document": FileText,
-  "FileText": FileText,
-  "Image": Image,
-  "MessageSquare": MessageSquare,
-  "Chat": MessageSquare,
-  "Music": Music,
-  "Video": Video,
-  "History": History,
-  "Settings": Settings,
-  "User": User,
-  "Mail": Mail,
-  "FileType": FileType,
-  "FileImage": FileImage,
-  "FileAudio": FileAudio,
-  "FileVideo": FileVideo,
-  "File": File,
-  "BarChart": BarChart,
-  "Globe": Globe,
-  "Zap": Zap
+// Type for available icon names
+export type IconName = 
+  | "MessageSquare" 
+  | "FileText" 
+  | "Settings" 
+  | "History" 
+  | "Search" 
+  | "Upload" 
+  | "Code" 
+  | "Bot" 
+  | "Brain" 
+  | "Database" 
+  | "Server" 
+  | "Users" 
+  | "User" 
+  | "Home" 
+  | "Lock"
+  | "FileQuestion"
+  | "HelpCircle"
+  | "FileImage";
+
+// Map of icon names to their components
+export const iconMap: Record<IconName, LucideIcon> = {
+  MessageSquare,
+  FileText,
+  Settings,
+  History,
+  Search,
+  Upload,
+  Code,
+  Bot,
+  Brain,
+  Database,
+  Server,
+  Users,
+  User,
+  Home,
+  Lock,
+  FileQuestion,
+  HelpCircle,
+  FileImage
 };
 
-export const getIconComponent = (iconName: string): LucideIcon => {
-  return iconMap[iconName] || File; // Default to File icon if not found
+export const getIconByName = (iconName: string): LucideIcon => {
+  return iconMap[iconName as IconName] || MessageSquare;
 };
