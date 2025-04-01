@@ -7,7 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { theme, setTheme } = useTheme();
+  const { updateTheme } = useTheme();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,17 +24,17 @@ const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ childre
           
           // Set theme based on client colors
           if (client) {
-            setTheme({
+            updateTheme({
               primaryColor: client.primaryColor || '#000000',
               secondaryColor: client.secondaryColor || '#ffffff',
               accentColor: client.accentColor || '#3b82f6',
               logo: client.logo || '',
-              name: client.name || 'App',
+              clientName: client.name || 'App',
             });
           }
           
           // For client admins, ensure their workflows are created
-          if (user.role === 'client-admin') {
+          if (user.role === 'client_admin') {
             // Check if default workflows exist, if not create them
             const workflows = await workflowService.getWorkflows();
             
@@ -68,7 +68,7 @@ const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     loadClientData();
-  }, [user, setTheme]);
+  }, [user, updateTheme]);
 
   if (loading) {
     return (

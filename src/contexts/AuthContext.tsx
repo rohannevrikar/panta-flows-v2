@@ -1,218 +1,270 @@
-
-import { createContext, useContext, useEffect, useState } from "react";
-import { authService, User, UserRole } from "../services/authService";
-import { useNavigate } from "react-router-dom";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
+import { authService } from "@/services/authService";
+import { userService } from "@/services/userService";
+import { Role } from "@/models/Role";
 import { toast } from "sonner";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../config/firebase";
-import { useTheme } from "./ThemeContext";
+import { useNavigate } from "react-router-dom";
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  avatar?: string;
+  role?: UserRole;
+  clientId?: string; // Changed from client_id to clientId for consistency
+  settings?: UserSettings;
+}
 
 interface AuthContextType {
   user: User | null;
+  token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
-  updateProfile: (userData: Partial<User>) => Promise<void>;
-  isAuthenticated: boolean;
-  hasPermission: (requiredRole: UserRole) => boolean;
+  updateUser: (userData: Partial<User>) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+interface UserSettings {
+  notifications: boolean;
+  theme: string;
+}
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
+type UserRole = "admin" | "user" | "client-admin";
+
+const DEFAULT_USER_AVATAR = "https://avatar.iran.liara.run/public/boy";
+const DEFAULT_CLIENT_ID = "panta";
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  token: null,
+  loading: false,
+  login: async () => {},
+  loginWithGoogle: async () => {},
+  logout: () => {},
+  register: async () => {},
+  updateUser: async () => {},
+});
+
+export const useAuth = () => useContext(AuthContext);
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [token, setToken] = useState<string | null>(
+    localStorage.getItem("token")
+  );
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { clientId, setClientId } = useTheme();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
-      try {
-        if (firebaseUser) {
-          // Get user data from localStorage first (with role and client_id)
-          const storedUserStr = localStorage.getItem("user_info");
-          const storedUser = storedUserStr ? JSON.parse(storedUserStr) : null;
-          
-          const currentUser = {
-            id: firebaseUser.uid,
-            name: firebaseUser.displayName || "User",
-            email: firebaseUser.email || "",
-            avatar: firebaseUser.photoURL || undefined,
-            role: storedUser?.role || "user",
-            client_id: storedUser?.client_id || clientId,
+    const loadUserFromToken = async () => {
+      const storedToken = localStorage.getItem("token");
+      if (storedToken) {
+        setLoading(true);
+        try {
+          const response = await userService.getMe();
+
+          const user: User = {
+            id: response.id,
+            email: response.email,
+            name: response.name,
+            avatar: response.avatar || DEFAULT_USER_AVATAR,
+            role: response.role || "user",
+            clientId: response.clientId || DEFAULT_CLIENT_ID,
+            settings: {
+              notifications: response.settings?.notifications || true,
+              theme: response.settings?.theme || "light",
+            },
           };
-          
-          setUser(currentUser);
-          
-          // If the user has a client_id and it's different from the current theme,
-          // update the theme to match the user's client
-          if (currentUser.client_id && currentUser.client_id !== clientId) {
-            setClientId(currentUser.client_id);
-          }
-        } else {
+
+          setUser(user);
+          setToken(storedToken);
+        } catch (error) {
+          console.error("Error loading user from token:", error);
+          // Clear invalid token
+          localStorage.removeItem("token");
+          setToken(null);
           setUser(null);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error("Auth state change error:", error);
-        setUser(null);
-      } finally {
+      } else {
         setLoading(false);
       }
-    });
-    
-    return () => unsubscribe();
-  }, [clientId, setClientId]);
+    };
 
-  const login = async (email: string, password: string) => {
-    setLoading(true);
+    loadUserFromToken();
+  }, []);
+
+  const loginWithEmailPassword = async (email: string, password: string) => {
     try {
-      const response = await authService.login({ email, password });
-      setUser(response.user);
-      
-      // Update client theme if user has a specific client_id
-      if (response.user.client_id && response.user.client_id !== clientId) {
-        setClientId(response.user.client_id);
-      }
-      
-      toast.success("Login successful!");
+      setLoading(true);
+      // For demo, simulate an API call
+      const response = await authService.login(email, password);
+
+      const user: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        avatar: response.user.avatar || DEFAULT_USER_AVATAR,
+        role: response.user.role || "user",
+        clientId: response.user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        settings: {
+          notifications: response.user.settings?.notifications || true,
+          theme: response.user.settings?.theme || "light",
+        },
+      };
+
+      setUser(user);
+      setToken(response.access_token);
+      localStorage.setItem("token", response.access_token);
+      toast.success(`Welcome ${user.name}!`);
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Login failed");
+      }
       console.error("Login error:", error);
-      toast.error(error.message || "Login failed. Please check your credentials.");
-      throw error;
     } finally {
       setLoading(false);
     }
   };
 
   const loginWithGoogle = async () => {
-    setLoading(true);
     try {
+      setLoading(true);
+      // For demo, simulate an API call
       const response = await authService.loginWithGoogle();
-      setUser(response.user);
-      
-      // Update client theme if user has a specific client_id
-      if (response.user.client_id && response.user.client_id !== clientId) {
-        setClientId(response.user.client_id);
-      }
-      
-      toast.success("Login successful!");
+
+      const user: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        avatar: response.user.avatar || DEFAULT_USER_AVATAR,
+        role: response.user.role || "user",
+        clientId: response.user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        settings: {
+          notifications: response.user.settings?.notifications || true,
+          theme: response.user.settings?.theme || "light",
+        },
+      };
+
+      setUser(user);
+      setToken(response.access_token);
+      localStorage.setItem("token", response.access_token);
+      toast.success(`Welcome ${user.name}!`);
       navigate("/dashboard");
-    } catch (error: any) {
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Login with Google failed");
+      }
       console.error("Google login error:", error);
-      toast.error(error.message || "Google login failed. Please try again.");
-      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = async () => {
-    setLoading(true);
-    try {
-      await authService.logout();
-      setUser(null);
-      navigate("/login");
-      toast.success("Logged out successfully!");
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setLoading(false);
-    }
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("token");
+    toast.success("Logged out successfully");
+    navigate("/login");
   };
 
   const register = async (name: string, email: string, password: string) => {
-    setLoading(true);
     try {
-      const response = await authService.register({ name, email, password });
-      setUser(response.user);
-      
-      // Update client theme if user has a specific client_id
-      if (response.user.client_id && response.user.client_id !== clientId) {
-        setClientId(response.user.client_id);
-      }
-      
-      toast.success("Registration successful!");
+      setLoading(true);
+      // For demo, simulate an API call
+      const response = await authService.register(name, email, password);
+
+      const user: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        avatar: response.user.avatar || DEFAULT_USER_AVATAR,
+        role: response.user.role || "user",
+        clientId: response.user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        settings: {
+          notifications: response.user.settings?.notifications || true,
+          theme: response.user.settings?.theme || "light",
+        },
+      };
+
+      setUser(user);
+      setToken(response.access_token);
+      localStorage.setItem("token", response.access_token);
+      toast.success(`Welcome ${user.name}!`);
       navigate("/dashboard");
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      toast.error(error.message || "Registration failed. Please try again.");
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateProfile = async (userData: Partial<User>) => {
-    setLoading(true);
-    try {
-      const updatedUser = await authService.updateProfile(userData);
-      setUser(prev => prev ? { ...prev, ...updatedUser } : null);
-      
-      // Update client theme if client_id has changed
-      if (updatedUser.client_id && updatedUser.client_id !== clientId) {
-        setClientId(updatedUser.client_id);
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Registration failed");
       }
-      
-      toast.success("Profile updated successfully!");
-    } catch (error: any) {
-      console.error("Profile update error:", error);
-      toast.error(error.message || "Failed to update profile. Please try again.");
-      throw error;
+      console.error("Registration error:", error);
     } finally {
       setLoading(false);
     }
   };
-  
-  // Helper function to check if user has required role
-  const hasPermission = (requiredRole: UserRole): boolean => {
-    if (!user) return false;
-    
-    const userRole = user.role || "user";
-    
-    switch (requiredRole) {
-      case "super_admin":
-        return userRole === "super_admin";
-      
-      case "client_admin":
-        // Super admins can do anything client admins can
-        return userRole === "super_admin" || userRole === "client_admin";
-      
-      case "user":
-        // Any authenticated user passes this check
-        return true;
-      
-      default:
-        return false;
+
+  // Update user function (for profile updates)
+  const updateUser = async (userData: Partial<User>) => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // For demo, simulate an API call
+      const response = await authService.updateUser(userData);
+
+      const updatedUser: User = {
+        ...user,
+        ...response,
+        clientId: response.clientId || user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        settings: {
+          ...user.settings,
+          ...response.settings,
+        },
+      };
+
+      setUser(updatedUser);
+      toast.success("Profile updated successfully");
+    } catch (error) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("Failed to update profile");
+      }
+      console.error("Update profile error:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading,
-        login,
-        loginWithGoogle,
-        logout,
-        register,
-        updateProfile,
-        isAuthenticated: !!user,
-        hasPermission,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  const value = {
+    user,
+    token,
+    loading,
+    login: loginWithEmailPassword,
+    loginWithGoogle,
+    logout,
+    register,
+    updateUser,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export default AuthContext;

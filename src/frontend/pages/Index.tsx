@@ -1,187 +1,151 @@
 
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@/frontend/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs';
-import { PlusCircle } from 'lucide-react';
-import WorkflowCard from '@/frontend/components/WorkflowCard';
-import NewWorkflowDialog from '@/frontend/components/NewWorkflowDialog';
-import HistoryItem from '@/frontend/components/HistoryItem';
-import { workflowService } from '@/frontend/services/workflowService';
-import { historyService } from '@/frontend/services/historyService';
-import { Workflow } from '@/frontend/components/NewWorkflowDialog';
-import { useAuth } from '@/frontend/contexts/AuthContext';
-import { toast } from 'sonner';
-import { useIsMobile } from '@/hooks/use-mobile';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/frontend/contexts/AuthContext";
+import { workflowService } from "@/frontend/services/workflowService";
+import { Search } from "lucide-react";
+import { Input } from "@/frontend/components/ui/input";
+import { Button } from "@/frontend/components/ui/button";
+import WorkflowCard from "@/frontend/components/WorkflowCard";
+import ThemeSwitcher from "@/components/ThemeSwitcher";
+import NewWorkflowDialog from "@/frontend/components/NewWorkflowDialog";
+import { toast } from "sonner";
+
+// Simplified type for the Workflow
+interface Workflow {
+  id: string;
+  title: string;
+  description: string;
+  iconName: string;
+  isPublic: boolean;
+  isFavorite: boolean;
+}
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const isMobile = useIsMobile();
-  
   const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [history, setHistory] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState('workflows');
-  const [isLoading, setIsLoading] = useState(true);
-  const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
-  
+  const [filteredWorkflows, setFilteredWorkflows] = useState<Workflow[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [newWorkflowDialogOpen, setNewWorkflowDialogOpen] = useState(false);
+
+  const fetchWorkflows = async () => {
+    try {
+      setLoading(true);
+      const data = await workflowService.getWorkflows();
+      setWorkflows(data);
+      setFilteredWorkflows(data);
+    } catch (error) {
+      console.error("Error fetching workflows:", error);
+      toast.error("Failed to load workflows");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        if (activeTab === 'workflows') {
-          const workflowsData = await workflowService.getWorkflows();
-          setWorkflows(workflowsData || []);
-        } else if (activeTab === 'recent') {
-          const historyData = await historyService.getHistoryItems();
-          setHistory(historyData || []);
-        }
-      } catch (error) {
-        console.error(`Error fetching ${activeTab}:`, error);
-        toast.error(`Failed to load ${activeTab}. Please try again.`);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    fetchWorkflows();
+  }, [user]);
 
-    fetchData();
-  }, [activeTab]);
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = workflows.filter(workflow => 
+        workflow.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        workflow.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredWorkflows(filtered);
+    } else {
+      setFilteredWorkflows(workflows);
+    }
+  }, [searchTerm, workflows]);
 
-  const handleWorkflowClick = (workflowId: string) => {
-    navigate(`/workflow/${workflowId}`);
-  };
-
-  const handleHistoryItemClick = (historyId: string) => {
-    navigate(`/history/${historyId}`);
-  };
-
-  const handleDeleteWorkflow = async (workflowId: string) => {
+  const handleFavoriteToggle = async (id: string) => {
     try {
-      await workflowService.deleteWorkflow(workflowId);
-      setWorkflows(workflows.filter(workflow => workflow.id !== workflowId));
-      toast.success('Workflow deleted successfully');
+      // Update UI first for better UX
+      setWorkflows(prevWorkflows => 
+        prevWorkflows.map(workflow => 
+          workflow.id === id ? { ...workflow, isFavorite: !workflow.isFavorite } : workflow
+        )
+      );
+      
+      // Update on server
+      await workflowService.toggleFavorite(id);
     } catch (error) {
-      console.error('Error deleting workflow:', error);
-      toast.error('Failed to delete workflow');
+      console.error("Error toggling favorite:", error);
+      toast.error("Failed to update favorite status");
+      
+      // Revert UI change on error
+      setWorkflows(prevWorkflows => 
+        prevWorkflows.map(workflow => 
+          workflow.id === id ? { ...workflow, isFavorite: !workflow.isFavorite } : workflow
+        )
+      );
     }
   };
-
-  const handleToggleFavorite = async (workflow: Workflow) => {
-    if (!workflow.id) return;
-    
-    try {
-      const updatedWorkflow = { ...workflow, isFavorite: !workflow.isFavorite };
-      await workflowService.updateWorkflow(updatedWorkflow);
-      
-      setWorkflows(workflows.map(w => 
-        w.id === workflow.id ? updatedWorkflow : w
-      ));
-      
-      toast.success(`${workflow.title} ${workflow.isFavorite ? 'removed from' : 'added to'} favorites`);
-    } catch (error) {
-      console.error('Error updating workflow:', error);
-      toast.error('Failed to update workflow');
-    }
-  };
-
-  // Render placeholder when loading
-  const renderPlaceholder = () => (
-    <div className="text-center py-12">
-      <div className="animate-spin w-10 h-10 border-4 border-primary rounded-full border-t-transparent mx-auto mb-4"></div>
-      <p className="text-gray-500">Loading {activeTab}...</p>
-    </div>
-  );
-
-  // Render empty state when no data
-  const renderEmptyState = () => (
-    <div className="text-center py-12">
-      <div className="bg-gray-100 rounded-full p-4 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-        <PlusCircle className="h-8 w-8 text-gray-400" />
-      </div>
-      <h3 className="text-lg font-medium mb-1">No {activeTab} found</h3>
-      {activeTab === 'workflows' ? (
-        <>
-          <p className="text-gray-500 mb-4">Get started by creating your first workflow</p>
-          <Button onClick={() => setShowNewWorkflowDialog(true)}>
-            Create Workflow
-          </Button>
-        </>
-      ) : (
-        <p className="text-gray-500 mb-4">Your recent interactions will appear here</p>
-      )}
-    </div>
-  );
 
   return (
-    <div className="container mx-auto p-4 max-w-7xl">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl lg:text-3xl font-bold">Dashboard</h1>
+    <div className="container mx-auto py-8 px-4">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Dashboard</h1>
         
-        {activeTab === 'workflows' && (
-          <Button onClick={() => setShowNewWorkflowDialog(true)}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            {isMobile ? 'New' : 'New Workflow'}
-          </Button>
+        {user?.role === "admin" && (
+          <ThemeSwitcher visible={true} />
         )}
       </div>
       
-      <Tabs defaultValue="workflows" value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="workflows">My Workflows</TabsTrigger>
-          <TabsTrigger value="recent">Recent History</TabsTrigger>
-        </TabsList>
+      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+        <div className="relative w-full md:max-w-md">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Input
+            placeholder="Search workflows..."
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         
-        <TabsContent value="workflows" className="space-y-4">
-          {isLoading ? (
-            renderPlaceholder()
-          ) : workflows.length > 0 ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {workflows.map((workflow) => (
-                <WorkflowCard 
+        <Button onClick={() => setNewWorkflowDialogOpen(true)}>
+          New Workflow
+        </Button>
+      </div>
+      
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <div className="animate-spin w-8 h-8 border-4 border-primary rounded-full border-t-transparent"></div>
+        </div>
+      ) : (
+        <>
+          {filteredWorkflows.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredWorkflows.map((workflow) => (
+                <WorkflowCard
                   key={workflow.id}
-                  id={workflow.id || ''}
+                  id={workflow.id}
                   title={workflow.title}
                   description={workflow.description}
                   iconName={workflow.iconName}
                   isFavorite={workflow.isFavorite}
-                  isPublic={workflow.isPublic}
-                  onClick={() => workflow.id && handleWorkflowClick(workflow.id)}
-                  onDelete={() => workflow.id && handleDeleteWorkflow(workflow.id)}
-                  onToggleFavorite={() => handleToggleFavorite(workflow)}
+                  onFavoriteToggle={() => handleFavoriteToggle(workflow.id)}
+                  onClick={() => navigate(`/chat?workflowId=${workflow.id}`)}
                 />
               ))}
             </div>
           ) : (
-            renderEmptyState()
-          )}
-        </TabsContent>
-        
-        <TabsContent value="recent">
-          {isLoading ? (
-            renderPlaceholder()
-          ) : history.length > 0 ? (
-            <div className="space-y-2 max-w-2xl mx-auto">
-              {history.map((item) => (
-                <HistoryItem
-                  key={item.id}
-                  id={item.id}
-                  title={item.title}
-                  iconName={item.iconName || 'MessageSquare'}
-                  timestamp={new Date(item.timestamp || item.createdAt)}
-                  status={item.status || 'completed'}
-                  onClick={handleHistoryItemClick}
-                />
-              ))}
+            <div className="text-center py-12">
+              <p className="text-lg text-gray-500 mb-4">No workflows found</p>
+              <Button onClick={() => setNewWorkflowDialogOpen(true)}>
+                Create New Workflow
+              </Button>
             </div>
-          ) : (
-            renderEmptyState()
           )}
-        </TabsContent>
-      </Tabs>
+        </>
+      )}
       
-      <NewWorkflowDialog 
-        open={showNewWorkflowDialog} 
-        onOpenChange={setShowNewWorkflowDialog} 
+      <NewWorkflowDialog
+        open={newWorkflowDialogOpen}
+        onOpenChange={setNewWorkflowDialogOpen}
+        onWorkflowCreated={fetchWorkflows}
       />
     </div>
   );

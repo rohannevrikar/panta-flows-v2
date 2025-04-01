@@ -5,7 +5,7 @@ import { useTheme } from '@/frontend/contexts/ThemeContext';
 
 const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
-  const { theme, updateTheme } = useTheme();
+  const { updateTheme } = useTheme();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

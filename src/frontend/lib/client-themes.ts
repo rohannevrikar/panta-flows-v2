@@ -61,3 +61,26 @@ export const getClientConfig = (clientId?: string): ClientConfig => {
   if (!clientId) return defaultConfig;
   return clientConfigs[clientId] || defaultConfig;
 };
+
+// Function that returns ThemeConfig for use in ThemeContext
+export const getClientTheme = (clientId: string): ThemeConfig => {
+  const config = getClientConfig(clientId);
+  return {
+    primaryColor: config.primaryColor,
+    secondaryColor: config.secondaryColor,
+    accentColor: config.accentColor,
+    logo: config.logo,
+    clientName: config.name,
+    tagline: config.tagline
+  };
+};
+
+// Helper type for importing into ThemeContext
+export interface ThemeConfig {
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  logo?: string;
+  clientName: string;
+  tagline?: string;
+}

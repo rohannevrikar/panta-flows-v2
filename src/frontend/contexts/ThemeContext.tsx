@@ -1,17 +1,8 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { getClientTheme } from "@/frontend/lib/client-themes";
+import { getClientTheme, ThemeConfig } from "@/frontend/lib/client-themes";
 import { applyThemeColors } from "@/frontend/lib/theme-utils";
 import { toast } from "sonner";
-
-export interface ThemeConfig {
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  logo?: string;
-  clientName: string;
-  tagline?: string;
-}
 
 interface ThemeContextType {
   theme: ThemeConfig;

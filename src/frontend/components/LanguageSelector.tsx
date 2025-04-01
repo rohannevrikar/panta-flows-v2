@@ -1,42 +1,53 @@
 
-import React from 'react';
-import { useLanguage } from '@/frontend/contexts/LanguageContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/frontend/components/ui/select';
+import React from "react";
+import { useLanguage } from "@/frontend/contexts/LanguageContext";
+import { Check } from "lucide-react";
+import { Button } from "@/frontend/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/frontend/components/ui/dropdown-menu";
 
-export interface Language {
-  code: string;
-  name: string;
-  flag?: string;
-}
+const LanguageSelector = () => {
+  const { language, setLanguage, languages } = useLanguage();
 
-const LanguageSelector: React.FC = () => {
-  const { language, changeLanguage, availableLanguages } = useLanguage();
-  
-  const handleLanguageChange = (value: string) => {
-    // Find the language object that matches the selected code
-    const selectedLanguage = availableLanguages.find(lang => lang.code === value);
-    if (selectedLanguage) {
-      changeLanguage(selectedLanguage);
-    }
+  const handleLanguageChange = (newLanguage: string) => {
+    setLanguage(newLanguage);
+  };
+
+  // Map language codes to display names and flags
+  const languageInfo = {
+    en: { name: "English", flag: "🇺🇸" },
+    de: { name: "Deutsch", flag: "🇩🇪" },
+    fr: { name: "Français", flag: "🇫🇷" },
+    es: { name: "Español", flag: "🇪🇸" }
   };
 
   return (
-    <Select value={language?.code || 'en'} onValueChange={handleLanguageChange}>
-      <SelectTrigger className="w-[180px]">
-        <SelectValue placeholder="Select language">
-          {language?.flag && <span className="mr-2">{language.flag}</span>}
-          {language?.name || 'English'}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {availableLanguages.map((lang) => (
-          <SelectItem key={lang.code} value={lang.code}>
-            {lang.flag && <span className="mr-2">{lang.flag}</span>}
-            {lang.name}
-          </SelectItem>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-9 w-9 px-0">
+          {languageInfo[language as keyof typeof languageInfo]?.flag || "🌐"}
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {languages.map((lang) => (
+          <DropdownMenuItem
+            key={lang}
+            className="cursor-pointer flex items-center justify-between"
+            onClick={() => handleLanguageChange(lang)}
+          >
+            <span>
+              {languageInfo[lang as keyof typeof languageInfo]?.flag || "🌐"} {" "}
+              {languageInfo[lang as keyof typeof languageInfo]?.name || lang}
+            </span>
+            {language === lang && <Check className="ml-2 h-4 w-4" />}
+          </DropdownMenuItem>
         ))}
-      </SelectContent>
-    </Select>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };
 

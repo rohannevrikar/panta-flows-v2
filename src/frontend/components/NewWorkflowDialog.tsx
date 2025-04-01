@@ -1,103 +1,103 @@
 
-import { useState } from 'react';
-import { Button } from '@/frontend/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/frontend/components/ui/dialog';
-import { Input } from '@/frontend/components/ui/input';
-import { Label } from '@/frontend/components/ui/label';
-import { getIconByName } from '@/frontend/utils/iconMap';
-import { workflowService } from '@/frontend/services/workflowService';
-import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/frontend/contexts/AuthContext';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/frontend/components/ui/select';
-import { Switch } from '@/frontend/components/ui/switch';
-import { TextArea } from '@/frontend/components/ui/textarea';
-import { IconName } from '@/frontend/utils/iconMap';
-
-export interface Workflow {
-  id?: string;
-  title: string;
-  description: string;
-  iconName: string;
-  clientId: string;
-  isPublic: boolean;
-  isFavorite?: boolean;
-  type?: string;
-}
+import React, { useState } from "react";
+import { Button } from "@/frontend/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/frontend/components/ui/dialog";
+import { Input } from "@/frontend/components/ui/input";
+import { Label } from "@/frontend/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/frontend/components/ui/radio-group";
+import { getIconByName } from "@/frontend/utils/iconMap";
+import { workflowService } from "@/frontend/services/workflowService";
+import { toast } from "sonner";
+import { useAuth } from "@/frontend/contexts/AuthContext";
 
 interface NewWorkflowDialogProps {
   open: boolean;
-  onOpenChange: (isOpen: boolean) => void;
+  onOpenChange: (open: boolean) => void;
+  onWorkflowCreated: () => void;
 }
 
-const iconOptions: IconName[] = [
-  'MessageSquare',
-  'FileText',
-  'Brain',
-  'Bot',
-  'Database',
-  'Code',
-  'FileQuestion',
-  'FileImage',
+const workflowTypes = [
+  {
+    id: "chat",
+    name: "Chat",
+    description: "General purpose AI assistant",
+    icon: "MessageSquare",
+  },
+  {
+    id: "document",
+    name: "Document",
+    description: "Upload and analyze documents",
+    icon: "FileText",
+  },
+  {
+    id: "image",
+    name: "Image",
+    description: "Generate and edit images",
+    icon: "FileImage",
+  },
 ];
 
-const NewWorkflowDialog = ({ open, onOpenChange }: NewWorkflowDialogProps) => {
+const NewWorkflowDialog: React.FC<NewWorkflowDialogProps> = ({
+  open,
+  onOpenChange,
+  onWorkflowCreated,
+}) => {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Form state
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [iconName, setIconName] = useState<IconName>('MessageSquare');
-  const [isPublic, setIsPublic] = useState(true);
+  const [title, setTitle] = useState("");
+  const [type, setType] = useState("chat");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim()) {
-      toast.error('Please enter a title for your workflow');
+      toast.error("Please enter a workflow title");
       return;
     }
-
-    if (!user?.clientId) {
-      toast.error('You need to be part of a client to create a workflow');
+    
+    // Find the selected workflow type
+    const selectedType = workflowTypes.find((t) => t.id === type);
+    
+    if (!selectedType) {
+      toast.error("Please select a workflow type");
       return;
     }
-
-    setIsSubmitting(true);
+    
+    setLoading(true);
     
     try {
-      const workflow: Workflow = {
-        title,
-        description: description || `${title} workflow`,
-        iconName,
-        clientId: user.clientId,
-        isPublic,
-        isFavorite: false,
-      };
+      // Create the workflow
+      await workflowService.createWorkflow({
+        title: title,
+        description: selectedType.description,
+        iconName: selectedType.icon,
+        clientId: user?.clientId || "",
+        isPublic: true,
+        isFavorite: false
+      });
       
-      const result = await workflowService.createWorkflow(workflow);
-      
-      toast.success('Workflow created successfully!');
+      toast.success("Workflow created successfully");
       onOpenChange(false);
-      
-      // Clear form state
-      setTitle('');
-      setDescription('');
-      setIconName('MessageSquare');
-      setIsPublic(true);
-      
-      // Navigate to the new workflow if created successfully
-      if (result?.id) {
-        navigate(`/workflow/${result.id}`);
-      }
+      onWorkflowCreated();
+      setTitle("");
+      setType("chat");
     } catch (error) {
-      console.error('Error creating workflow:', error);
-      toast.error('Failed to create workflow. Please try again.');
+      console.error("Error creating workflow:", error);
+      toast.error("Failed to create workflow");
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
+  };
+
+  const IconComponent = (name: string) => {
+    const Icon = getIconByName(name);
+    return <Icon className="h-5 w-5" />;
   };
 
   return (
@@ -105,68 +105,90 @@ const NewWorkflowDialog = ({ open, onOpenChange }: NewWorkflowDialogProps) => {
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Create New Workflow</DialogTitle>
-          <DialogDescription>
-            Create a custom workflow for your AI interactions.
-          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            <div className="grid gap-2">
-              <Label htmlFor="title">Title</Label>
-              <Input
-                id="title"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="My Custom Workflow"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="description">Description</Label>
-              <TextArea
-                id="description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="What does this workflow do? (Optional)"
-                className="resize-none"
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="icon">Icon</Label>
-              <Select value={iconName} onValueChange={(value) => setIconName(value as IconName)}>
-                <SelectTrigger id="icon" className="w-full">
-                  <SelectValue placeholder="Select an icon" />
-                </SelectTrigger>
-                <SelectContent>
-                  {iconOptions.map((icon) => {
-                    const IconComponent = getIconByName(icon);
-                    return (
-                      <SelectItem key={icon} value={icon} className="flex items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="h-4 w-4" />
-                          <span>{icon}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex items-center space-x-2 pt-2">
-              <Switch
-                id="public"
-                checked={isPublic}
-                onCheckedChange={setIsPublic}
-              />
-              <Label htmlFor="public">Make workflow visible to all team members</Label>
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4 py-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Workflow Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Enter a name for your workflow"
+              disabled={loading}
+            />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+          
+          <div className="space-y-2">
+            <Label>Workflow Type</Label>
+            <RadioGroup
+              value={type}
+              onValueChange={setType}
+              className="grid grid-cols-1 gap-2"
+            >
+              {workflowTypes.map((workflowType) => (
+                <div
+                  key={workflowType.id}
+                  className={`flex items-center space-x-2 rounded-lg border p-3 cursor-pointer ${
+                    type === workflowType.id ? "border-primary" : "border-border"
+                  }`}
+                >
+                  <RadioGroupItem
+                    value={workflowType.id}
+                    id={workflowType.id}
+                    className="sr-only"
+                  />
+                  <div className="flex w-full items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="rounded-md bg-primary/10 p-2 text-primary">
+                        {IconComponent(workflowType.icon)}
+                      </div>
+                      <div>
+                        <Label
+                          htmlFor={workflowType.id}
+                          className="text-base font-medium"
+                        >
+                          {workflowType.name}
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          {workflowType.description}
+                        </p>
+                      </div>
+                    </div>
+                    {type === workflowType.id && (
+                      <div className="text-primary">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="24"
+                          height="24"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          className="h-5 w-5"
+                        >
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </RadioGroup>
+          </div>
+          
+          <DialogFooter className="pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create Workflow'}
+            <Button type="submit" disabled={loading}>
+              {loading ? "Creating..." : "Create Workflow"}
             </Button>
           </DialogFooter>
         </form>
