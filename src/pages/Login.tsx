@@ -1,46 +1,60 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff } from "lucide-react";
+
+import { useState, FormEvent } from "react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useToast } from "@/hooks/use-toast";
+import { getClientConfig } from "@/lib/client-themes";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
-import { getClientConfig } from "@/lib/client-themes";
 
 const Login = () => {
   const { theme, clientId } = useTheme();
   const clientConfig = getClientConfig(clientId);
-  const navigate = useNavigate();
-  const { toast } = useToast();
   const { login, loginWithGoogle } = useAuth();
+  
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
+    setError("");
     setIsLoading(true);
     
     try {
       await login(email, password);
     } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred during login");
+      }
       console.error("Login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError("");
     setIsLoading(true);
     
     try {
       await loginWithGoogle();
     } catch (error) {
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("An unexpected error occurred during Google login");
+      }
       console.error("Google login error:", error);
+    } finally {
       setIsLoading(false);
     }
   };
@@ -97,6 +111,13 @@ const Login = () => {
           </div>
 
           <CardContent className="p-0">
+            {error && (
+              <Alert variant="destructive" className="mb-6">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+            
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email">E-Mail</Label>
@@ -107,6 +128,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12"
                   required
+                  disabled={isLoading}
                 />
               </div>
               
@@ -122,11 +144,13 @@ const Login = () => {
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 pr-10"
                     required
+                    disabled={isLoading}
                   />
                   <button 
                     type="button"
                     onClick={() => setShowPassword(!showPassword)} 
                     className="absolute right-3 top-3 text-gray-500"
+                    disabled={isLoading}
                   >
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>

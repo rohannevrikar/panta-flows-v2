@@ -15,7 +15,12 @@ export interface Workflow {
 
 class WorkflowService {
   async getWorkflows(): Promise<Workflow[]> {
-    return apiRequest("/workflows");
+    try {
+      return await apiRequest("/workflows");
+    } catch (error) {
+      console.error("Failed to fetch workflows:", error);
+      return [];
+    }
   }
   
   async getWorkflowById(id: string): Promise<Workflow> {
