@@ -71,7 +71,7 @@ const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatP
                 type="button" 
                 variant="ghost" 
                 size="sm" 
-                className="h-5 w-5 p-0 ml-1" 
+                className="h-5 w-5 p-0 ml-1 hover:bg-black hover:text-white" 
                 onClick={() => removeFile(index)}
               >
                 <X className="h-3 w-3" />
@@ -98,7 +98,7 @@ const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatP
             type="button"
             size="icon"
             variant="ghost"
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-black hover:text-white"
             onClick={() => fileInputRef.current?.click()}
           >
             <Paperclip className="h-4 w-4" />
@@ -113,7 +113,7 @@ const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatP
           <Button 
             type="submit" 
             size="icon"
-            className="h-8 w-8 bg-panta-blue hover:bg-panta-blue-600"
+            className="h-8 w-8 bg-panta-blue hover:bg-black hover:text-white"
             disabled={!(value || query).trim() && files.length === 0}
           >
             <Send className="h-4 w-4" />

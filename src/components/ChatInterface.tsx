@@ -107,7 +107,7 @@ const ChatInterface = ({
                       <Button
                         key={starter.id}
                         variant="outline"
-                        className="text-left h-auto py-3 px-4 whitespace-normal"
+                        className="text-left h-auto py-3 px-4 whitespace-normal hover:bg-black hover:text-white hover:border-black"
                         onClick={() => handleStarterClick(starter.text)}
                       >
                         {starter.text}
@@ -139,7 +139,11 @@ const ChatInterface = ({
                       {message.sender === "user" ? (
                         <User className="h-5 w-5 text-white" />
                       ) : (
-                        <Feather className="h-5 w-5 text-panta-blue" />
+                        <img 
+                          src="/panta-logo.png" 
+                          alt="PANTA Logo" 
+                          className="h-5 w-5" 
+                        />
                       )}
                     </div>
                     <div
@@ -182,7 +186,7 @@ const ChatInterface = ({
             variant="ghost" 
             size="icon"
             onClick={handleClose}
-            className="rounded-full hover:bg-gray-200"
+            className="rounded-full hover:bg-black hover:text-white"
           >
             <X className="h-5 w-5" />
             <span className="sr-only">Close chat</span>

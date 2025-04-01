@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { 
   Bot, 
@@ -8,7 +9,8 @@ import {
   Music, 
   Plus, 
   Video,
-  SlidersHorizontal
+  SlidersHorizontal,
+  LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +28,7 @@ interface Workflow {
   id: string;
   title: string;
   description: string;
-  icon: React.ElementType;
+  icon: LucideIcon;
   color?: string;
 }
 
@@ -141,7 +143,7 @@ const Index = () => {
   };
 
   const handleCreateWorkflow = (workflowData: any) => {
-    const iconComponent = {
+    const iconMap: Record<string, LucideIcon> = {
       "Chat": MessageSquare,
       "Code": Code,
       "Image": Image,
@@ -149,7 +151,9 @@ const Index = () => {
       "Video": Video,
       "Music": Music,
       "Bot": Bot
-    }[workflowData.selectedIcon];
+    };
+
+    const iconComponent = iconMap[workflowData.selectedIcon] || MessageSquare;
 
     const newWorkflow = {
       id: `workflow-${Date.now()}`,
