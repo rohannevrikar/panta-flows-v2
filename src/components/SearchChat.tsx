@@ -8,9 +8,18 @@ interface SearchChatProps {
   autoFocus?: boolean;
   value?: string;
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit?: (text: string, files: File[]) => void;
+  disableNavigation?: boolean;
 }
 
-const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatProps) => {
+const SearchChat = ({ 
+  onFocus, 
+  autoFocus = false, 
+  value, 
+  onChange,
+  onSubmit,
+  disableNavigation = false
+}: SearchChatProps) => {
   const [query, setQuery] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,8 +35,14 @@ const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatP
     e.preventDefault();
     if ((!query.trim() && !value?.trim()) && files.length === 0) return;
     
-    // Handle search/chat submission with files
-    console.log("Search or chat:", value || query, "Files:", files);
+    const currentText = value || query;
+    
+    if (onSubmit) {
+      onSubmit(currentText, files);
+    } else {
+      console.log("Search or chat:", currentText, "Files:", files);
+    }
+    
     if (!value) {
       setQuery("");
     }
@@ -42,7 +57,7 @@ const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatP
   };
 
   const handleFocus = () => {
-    if (onFocus) onFocus();
+    if (onFocus && !disableNavigation) onFocus();
   };
 
   const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {

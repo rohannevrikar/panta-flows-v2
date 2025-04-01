@@ -8,6 +8,8 @@ import { useEffect } from "react";
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
+import History from "./pages/History";
+import ChatInterface from "./components/ChatInterface";
 import { ThemeProvider, useTheme } from "./contexts/ThemeContext";
 import { applyThemeColors } from "./lib/theme-utils";
 
@@ -35,6 +37,8 @@ const App = () => (
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/dashboard" element={<Index />} />
+              <Route path="/history" element={<History />} />
+              <Route path="/chat" element={<ChatInterface />} />
               <Route path="/" element={<Navigate to="/login" replace />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

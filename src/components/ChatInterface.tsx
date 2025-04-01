@@ -23,12 +23,14 @@ interface ConversationStarter {
 interface ChatInterfaceProps {
   onClose?: () => void;
   workflowTitle?: string;
+  userName?: string;
   conversationStarters?: ConversationStarter[];
 }
 
 const ChatInterface = ({ 
   onClose, 
   workflowTitle = "Chat Assistant",
+  userName = "Moin Arian",
   conversationStarters = [
     { id: "1", text: "Generate a marketing strategy for my business" },
     { id: "2", text: "Help me draft an email to a client" },
@@ -76,10 +78,36 @@ const ChatInterface = ({
     }, 1000);
   };
 
+  const handleSubmit = (text: string, files: File[]) => {
+    setShowStarters(false);
+    
+    const newMessage: Message = {
+      id: `user-${Date.now()}`,
+      sender: "user",
+      content: text,
+      timestamp: new Date(),
+    };
+    
+    setMessages(prev => [...prev, newMessage]);
+    setInput("");
+    
+    // Simulate bot response
+    setTimeout(() => {
+      const botReply: Message = {
+        id: `bot-${Date.now()}`,
+        sender: "bot",
+        content: "I'm processing your request. Here's what I can help you with based on your message: " + text,
+        timestamp: new Date(),
+      };
+      
+      setMessages(prev => [...prev, botReply]);
+    }, 1000);
+  };
+
   return (
     <div className="h-screen w-full flex flex-col bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm z-10">
+      {/* Fixed Header */}
+      <header className="bg-white shadow-sm z-10 sticky top-0">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Logo />
           
@@ -87,10 +115,13 @@ const ChatInterface = ({
             {workflowTitle}
           </div>
           
-          <ProfileDropdown 
-            name="Moin Arian" 
-            email="moin@example.com"
-          />
+          <div className="flex items-center gap-3">
+            <div className="text-lg font-medium">{userName}</div>
+            <ProfileDropdown 
+              name={userName} 
+              email="moin@example.com"
+            />
+          </div>
         </div>
       </header>
       
@@ -139,11 +170,7 @@ const ChatInterface = ({
                       {message.sender === "user" ? (
                         <User className="h-5 w-5 text-white" />
                       ) : (
-                        <img 
-                          src="/panta-logo.png" 
-                          alt="PANTA Logo" 
-                          className="h-5 w-5" 
-                        />
+                        <Feather className="h-5 w-5 text-panta-blue" />
                       )}
                     </div>
                     <div
@@ -174,7 +201,13 @@ const ChatInterface = ({
           </ScrollArea>
           
           <div className="border-t p-4 bg-white">
-            <SearchChat autoFocus={true} value={input} onChange={(e) => setInput(e.target.value)} />
+            <SearchChat 
+              autoFocus={true} 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)} 
+              onSubmit={handleSubmit}
+              disableNavigation={true}
+            />
             <div className="text-xs text-center mt-3 text-gray-500">
               PANTA Flows can make mistakes. Please check important information.
             </div>

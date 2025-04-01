@@ -10,6 +10,7 @@ import {
   Plus, 
   Video,
   SlidersHorizontal,
+  History,
   LucideIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,7 @@ import ChatInterface from "@/components/ChatInterface";
 import { Slider } from "@/components/ui/slider";
 import NewWorkflowDialog from "@/components/NewWorkflowDialog";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 
 interface Workflow {
   id: string;
@@ -111,19 +113,29 @@ const historyItems = [
 ];
 
 const Index = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("all");
   const [showChat, setShowChat] = useState(false);
   const [historyData, setHistoryData] = useState(historyItems);
   const [sliderValue, setSliderValue] = useState([50]);
   const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
   const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>(workflows);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentWorkflow, setCurrentWorkflow] = useState<Workflow | null>(null);
   
-  const handleSearchFocus = () => {
+  const handleSearchSubmit = (text: string, files: File[]) => {
+    setCurrentWorkflow({
+      id: "chat",
+      title: "Chat Assistant",
+      description: "General purpose AI chat assistant",
+      icon: MessageSquare
+    });
     setShowChat(true);
   };
 
   const handleCloseChat = () => {
     setShowChat(false);
+    setCurrentWorkflow(null);
   };
 
   const toggleFavorite = (id: string) => {
@@ -167,6 +179,11 @@ const Index = () => {
     toast.success("New workflow created successfully!");
   };
 
+  const handleWorkflowClick = (workflow: Workflow) => {
+    setCurrentWorkflow(workflow);
+    setShowChat(true);
+  };
+
   useEffect(() => {
     setShowChat(false);
   }, []);
@@ -174,23 +191,42 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {showChat ? (
-        <ChatInterface onClose={handleCloseChat} />
+        <ChatInterface 
+          onClose={handleCloseChat} 
+          workflowTitle={currentWorkflow?.title} 
+          userName="Moin Arian"
+        />
       ) : (
         <>
           <header className="bg-white shadow-sm">
             <div className="container mx-auto px-4 py-4 flex items-center justify-between">
               <Logo />
               
-              <ProfileDropdown 
-                name="Moin Arian" 
-                email="moin@example.com"
-              />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-black hover:text-white"
+                  onClick={() => navigate("/history")}
+                >
+                  <History className="h-5 w-5" />
+                </Button>
+                <ProfileDropdown 
+                  name="Moin Arian" 
+                  email="moin@example.com"
+                />
+              </div>
             </div>
           </header>
           
           <main className="container mx-auto px-4 py-8">
             <section className="mb-10">
-              <SearchChat onFocus={handleSearchFocus} autoFocus={false} />
+              <SearchChat 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onSubmit={handleSearchSubmit}
+                disableNavigation={true}
+              />
             </section>
             
             <section className="mb-10">
@@ -198,7 +234,7 @@ const Index = () => {
                 <h2 className="text-xl font-medium">Workflows</h2>
                 <Button 
                   variant="outline" 
-                  className="gap-1"
+                  className="gap-1 hover:bg-black hover:text-white"
                   onClick={() => setShowNewWorkflowDialog(true)}
                 >
                   <Plus className="h-4 w-4" />
@@ -222,10 +258,7 @@ const Index = () => {
                         description={workflow.description}
                         icon={workflow.icon}
                         color={workflow.color}
-                        onClick={() => {
-                          console.log(`Workflow clicked: ${workflow.id}`);
-                          setShowChat(true);
-                        }}
+                        onClick={() => handleWorkflowClick(workflow)}
                       />
                     ))}
                   </div>
@@ -239,10 +272,7 @@ const Index = () => {
                         title={workflow.title}
                         description={workflow.description}
                         icon={workflow.icon}
-                        onClick={() => {
-                          console.log(`Workflow clicked: ${workflow.id}`);
-                          setShowChat(true);
-                        }}
+                        onClick={() => handleWorkflowClick(workflow)}
                       />
                     ))}
                   </div>
@@ -256,10 +286,7 @@ const Index = () => {
                         title={workflow.title}
                         description={workflow.description}
                         icon={workflow.icon}
-                        onClick={() => {
-                          console.log(`Workflow clicked: ${workflow.id}`);
-                          setShowChat(true);
-                        }}
+                        onClick={() => handleWorkflowClick(workflow)}
                       />
                     ))}
                   </div>
@@ -292,7 +319,12 @@ const Index = () => {
             <section>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-medium">Recent History</h2>
-                <Button variant="ghost" size="sm">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="hover:bg-black hover:text-white"
+                  onClick={() => navigate("/history")}
+                >
                   View All
                 </Button>
               </div>
@@ -309,6 +341,12 @@ const Index = () => {
                     isFavorite={item.isFavorite}
                     onClick={() => {
                       console.log(`History item clicked: ${item.id}`);
+                      setCurrentWorkflow({
+                        id: item.id,
+                        title: item.workflowType,
+                        description: item.title,
+                        icon: item.icon
+                      });
                       setShowChat(true);
                     }}
                     onFavoriteToggle={() => toggleFavorite(item.id)}
