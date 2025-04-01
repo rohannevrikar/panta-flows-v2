@@ -58,7 +58,6 @@ const History = () => {
   const handleStatusChange = async (id: string, newStatus: HistoryItemStatus) => {
     try {
       await historyService.updateHistoryItem(id, { status: newStatus });
-      // Extract the status string from the HistoryItemStatus object
       const statusString = typeof newStatus === 'string' ? newStatus : newStatus.status;
       toast.success(`History item status changed to ${statusString}.`);
       // Reload history after status change
@@ -67,6 +66,13 @@ const History = () => {
       console.error('Error updating history item:', error);
       toast.error("Could not update history item status. Please try again.");
     }
+  };
+
+  // Map HistoryItemStatus to the string type expected by HistoryItem component
+  const mapStatusToHistoryItemStatus = (status: HistoryItemStatus): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
+    const statusValue = status.status;
+    // Map "in_progress" to "processing" for compatibility with HistoryItem component
+    return statusValue === "in_progress" ? "processing" : statusValue as any;
   };
 
   return (
@@ -103,7 +109,7 @@ const History = () => {
                     id={item.id}
                     title={item.title}
                     timestamp={new Date(item.date)}
-                    status={item.status.status} // Pass the string status rather than the object
+                    status={mapStatusToHistoryItemStatus(item.status)}
                     iconName={item.workflowType}
                     onClick={() => handleDelete(item.id)}
                   />
