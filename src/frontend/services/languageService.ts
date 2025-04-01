@@ -1,6 +1,6 @@
 
 import { apiRequest } from "./api";
-import { Language } from "@/frontend/contexts/LanguageContext";
+import { Language } from "@/services/types";
 
 export interface TranslationEntry {
   key: string;

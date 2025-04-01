@@ -71,7 +71,7 @@ const History = () => {
       await historyService.updateHistoryItem(id, { status: newStatus });
       toast({
         title: "Status updated",
-        description: `History item status changed to ${newStatus}.`,
+        description: `History item status changed to ${newStatus.status}.`,
       });
       // Reload history after status change
       loadHistory();
@@ -118,11 +118,10 @@ const History = () => {
                   <HistoryItem
                     id={item.id}
                     title={item.title}
-                    date={item.date}
-                    status={item.status as HistoryItemStatus}
-                    workflowType={item.workflowType}
-                    onDelete={() => handleDelete(item.id)}
-                    onStatusChange={(status) => handleStatusChange(item.id, status)}
+                    timestamp={new Date(item.date)}
+                    status={item.status}
+                    iconName={item.workflowType}
+                    onClick={() => handleDelete(item.id)}
                   />
                 </Card>
               ))}

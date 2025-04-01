@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/frontend/contexts/AuthContext';
 import { useTheme } from '@/frontend/contexts/ThemeContext';
-import { workflowService } from '@/frontend/services/workflowService';
+import { workflowService, Workflow, WorkflowCreateParams } from '@/frontend/services/workflowService';
 import { Button } from '@/frontend/components/ui/button';
 import { Card } from '@/frontend/components/ui/card';
 import { PlusCircle } from 'lucide-react';
@@ -11,19 +11,6 @@ import WorkflowCard from '@/frontend/components/WorkflowCard';
 import NewWorkflowDialog from '@/frontend/components/NewWorkflowDialog';
 import { toast } from 'sonner';
 import { UserRole } from '@/services/types';
-
-// Workflow type
-interface Workflow {
-  id: string;
-  title: string;
-  description: string;
-  iconName: string;
-  isFavorite: boolean;
-  isPublic: boolean;
-  clientId?: string;
-  createdAt?: Date | string;
-  updatedAt?: Date | string;
-}
 
 const Index = () => {
   const { user } = useAuth();
@@ -40,13 +27,7 @@ const Index = () => {
   const loadWorkflows = async () => {
     setIsLoading(true);
     try {
-      // Use filter based on activeTab
-      let filter = {};
-      if (activeTab === "favorites") {
-        filter = { isFavorite: true };
-      }
-      
-      const items = await workflowService.getWorkflows(filter);
+      const items = await workflowService.getWorkflows();
       setWorkflowItems(items);
     } catch (error) {
       console.error('Error loading workflows:', error);
@@ -56,13 +37,9 @@ const Index = () => {
     }
   };
 
-  const handleCreateWorkflow = async (data: Partial<Workflow>) => {
+  const handleCreateWorkflow = async (data: WorkflowCreateParams) => {
     try {
-      await workflowService.createWorkflow({
-        ...data,
-        clientId,
-        isPublic: true
-      });
+      await workflowService.createWorkflow(data);
       toast.success("Workflow created successfully!");
       loadWorkflows();
       setIsDialogOpen(false);
@@ -85,7 +62,8 @@ const Index = () => {
     }
   };
 
-  const canCreateWorkflow = user && (user.role === "client_admin" as UserRole || user.role === "super_admin" as UserRole);
+  // Check if user has the required role
+  const canCreateWorkflow = user && ["super_admin", "client_admin"].includes(user.role);
 
   return (
     <div className="container mx-auto py-6 space-y-6">

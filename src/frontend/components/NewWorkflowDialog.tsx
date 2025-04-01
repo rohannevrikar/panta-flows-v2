@@ -12,14 +12,14 @@ import { Input } from "@/frontend/components/ui/input";
 import { Label } from "@/frontend/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/frontend/components/ui/radio-group";
 import { getIconByName } from "@/frontend/utils/iconMap";
-import { workflowService } from "@/frontend/services/workflowService";
+import { workflowService, WorkflowCreateParams } from "@/frontend/services/workflowService";
 import { toast } from "sonner";
 import { useAuth } from "@/frontend/contexts/AuthContext";
 
-interface NewWorkflowDialogProps {
+export interface NewWorkflowDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onWorkflowCreated: () => void;
+  onSubmit: (data: WorkflowCreateParams) => Promise<void>;
 }
 
 const workflowTypes = [
@@ -46,7 +46,7 @@ const workflowTypes = [
 const NewWorkflowDialog: React.FC<NewWorkflowDialogProps> = ({
   open,
   onOpenChange,
-  onWorkflowCreated,
+  onSubmit,
 }) => {
   const { user } = useAuth();
   const [title, setTitle] = useState("");
@@ -73,7 +73,7 @@ const NewWorkflowDialog: React.FC<NewWorkflowDialogProps> = ({
     
     try {
       // Create the workflow
-      await workflowService.createWorkflow({
+      await onSubmit({
         title: title,
         description: selectedType.description,
         iconName: selectedType.icon,
@@ -82,9 +82,6 @@ const NewWorkflowDialog: React.FC<NewWorkflowDialogProps> = ({
         isFavorite: false
       });
       
-      toast.success("Workflow created successfully");
-      onOpenChange(false);
-      onWorkflowCreated();
       setTitle("");
       setType("chat");
     } catch (error) {

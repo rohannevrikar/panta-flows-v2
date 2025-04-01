@@ -39,7 +39,7 @@ export const workflowService = {
    * Get all workflows available to the current user
    * @returns List of workflows
    */
-  getWorkflows: async (): Promise<Workflow[]> => {
+  getWorkflows: async () => {
     // In a real implementation, this would call the API
     // return apiRequest("/workflows", "GET");
     
