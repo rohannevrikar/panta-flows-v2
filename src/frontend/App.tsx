@@ -13,14 +13,14 @@ import ProtectedRoute from "@/frontend/components/ProtectedRoute";
 import ClientWorkflowLoader from "@/frontend/components/ClientWorkflowLoader";
 import VersionNumber from "@/frontend/components/VersionNumber";
 
-// Lazy load pages for better performance
-const Index = lazy(() => import("@/frontend/pages/Index"));
-const Login = lazy(() => import("@/frontend/pages/Login"));
-const NotFound = lazy(() => import("@/frontend/pages/NotFound"));
-const History = lazy(() => import("@/frontend/pages/History"));
-const Profile = lazy(() => import("@/frontend/pages/Profile"));
-const Settings = lazy(() => import("@/frontend/pages/Settings"));
-const ChatInterface = lazy(() => import("@/frontend/components/ChatInterface"));
+// Lazy load pages for better performance - use relative paths for lazy loading
+const Index = lazy(() => import("./pages/Index"));
+const Login = lazy(() => import("./pages/Login"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const History = lazy(() => import("./pages/History"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Settings = lazy(() => import("./pages/Settings"));
+const ChatInterface = lazy(() => import("../components/ChatInterface"));
 
 // Error fallback component
 const ErrorFallback = ({ error }: { error: Error }) => (

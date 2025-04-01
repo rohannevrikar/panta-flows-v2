@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from "react";
 import { authService, User, UserRole } from "../services/authService";
 import { useNavigate } from "react-router-dom";
@@ -31,7 +32,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setLoading(true);
       try {
         if (firebaseUser) {
-          // Get user data from localStorage first (with role and client_id)
+          // Get user data from localStorage first (with role and clientId)
           const storedUserStr = localStorage.getItem("user_info");
           const storedUser = storedUserStr ? JSON.parse(storedUserStr) : null;
           
@@ -41,15 +42,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             email: firebaseUser.email || "",
             avatar: firebaseUser.photoURL || undefined,
             role: storedUser?.role || "user",
-            client_id: storedUser?.client_id || clientId,
+            clientId: storedUser?.clientId || clientId,
           };
           
           setUser(currentUser);
           
-          // If the user has a client_id and it's different from the current theme,
+          // If the user has a clientId and it's different from the current theme,
           // update the theme to match the user's client
-          if (currentUser.client_id && currentUser.client_id !== clientId) {
-            setClientId(currentUser.client_id);
+          if (currentUser.clientId && currentUser.clientId !== clientId) {
+            setClientId(currentUser.clientId);
           }
         } else {
           setUser(null);
@@ -71,9 +72,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await authService.login({ email, password });
       setUser(response.user);
       
-      // Update client theme if user has a specific client_id
-      if (response.user.client_id && response.user.client_id !== clientId) {
-        setClientId(response.user.client_id);
+      // Update client theme if user has a specific clientId
+      if (response.user.clientId && response.user.clientId !== clientId) {
+        setClientId(response.user.clientId);
       }
       
       toast.success("Login successful!");
@@ -93,9 +94,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await authService.loginWithGoogle();
       setUser(response.user);
       
-      // Update client theme if user has a specific client_id
-      if (response.user.client_id && response.user.client_id !== clientId) {
-        setClientId(response.user.client_id);
+      // Update client theme if user has a specific clientId
+      if (response.user.clientId && response.user.clientId !== clientId) {
+        setClientId(response.user.clientId);
       }
       
       toast.success("Login successful!");
@@ -129,9 +130,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const response = await authService.register({ name, email, password });
       setUser(response.user);
       
-      // Update client theme if user has a specific client_id
-      if (response.user.client_id && response.user.client_id !== clientId) {
-        setClientId(response.user.client_id);
+      // Update client theme if user has a specific clientId
+      if (response.user.clientId && response.user.clientId !== clientId) {
+        setClientId(response.user.clientId);
       }
       
       toast.success("Registration successful!");
@@ -151,9 +152,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const updatedUser = await authService.updateProfile(userData);
       setUser(prev => prev ? { ...prev, ...updatedUser } : null);
       
-      // Update client theme if client_id has changed
-      if (updatedUser.client_id && updatedUser.client_id !== clientId) {
-        setClientId(updatedUser.client_id);
+      // Update client theme if clientId has changed
+      if (updatedUser.clientId && updatedUser.clientId !== clientId) {
+        setClientId(updatedUser.clientId);
       }
       
       toast.success("Profile updated successfully!");
