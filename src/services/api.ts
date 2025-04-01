@@ -1,8 +1,8 @@
 
 import { toast } from "sonner";
 
-// Base API URL - you would replace this with your actual backend URL
-const API_BASE_URL = "https://api.example.com";
+// Base API URL for our FastAPI backend
+const API_BASE_URL = "http://localhost:8000/api";
 
 // Generic error handler for API requests
 const handleApiError = (error: any) => {
