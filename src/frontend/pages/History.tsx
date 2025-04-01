@@ -103,7 +103,7 @@ const History = () => {
                     id={item.id}
                     title={item.title}
                     timestamp={new Date(item.date)}
-                    status={item.status.status}
+                    status={item.status.status} // Pass the string status rather than the object
                     iconName={item.workflowType}
                     onClick={() => handleDelete(item.id)}
                   />
