@@ -6,28 +6,36 @@ interface LogoProps {
   className?: string;
   variant?: "default" | "white";
   onClick?: () => void;
+  small?: boolean;
 }
 
-const Logo = ({ className, variant = "default", onClick }: LogoProps) => {
+const Logo = ({ className, variant = "default", onClick, small = false }: LogoProps) => {
   return (
     <Link to="/dashboard" className="no-underline">
       <div 
         onClick={onClick} 
-        className={cn("font-bold text-xl flex items-center cursor-pointer", className)}
+        className={cn("font-bold flex items-center cursor-pointer", 
+          small ? "text-base" : "text-xl",
+          className
+        )}
       >
         <img 
           src="/panta-logo.png" 
           alt="Panta Rhai Logo" 
-          className="h-10 mr-2" 
+          className={cn(small ? "h-7 mr-1" : "h-10 mr-2")} 
         />
-        <span className={cn(
-          "mr-1 tracking-wider", 
-          variant === "white" ? "text-white" : "text-black"
-        )}>PANTA</span>
-        <span className={cn(
-          "font-light tracking-wider", 
-          variant === "white" ? "text-white" : "text-black"
-        )}>RHAI</span>
+        {!small && (
+          <>
+            <span className={cn(
+              "mr-1 tracking-wider", 
+              variant === "white" ? "text-white" : "text-black"
+            )}>PANTA</span>
+            <span className={cn(
+              "font-light tracking-wider", 
+              variant === "white" ? "text-white" : "text-black"
+            )}>RHAI</span>
+          </>
+        )}
       </div>
     </Link>
   );

@@ -1,14 +1,12 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { User, X } from "lucide-react";
-import { SidebarProvider } from "@/components/ui/sidebar";
-import ChatSidebar from "./ChatSidebar";
-import SearchChat from "./SearchChat";
+import { User, X, Feather } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import ProfileDropdown from "./ProfileDropdown";
+import SearchChat from "./SearchChat";
 
 interface Message {
   id: string;
@@ -39,14 +37,7 @@ const ChatInterface = ({
   ]
 }: ChatInterfaceProps) => {
   const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      sender: "bot",
-      content: "Hello! How can I help you today?",
-      timestamp: new Date(),
-    },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   
   const [input, setInput] = useState("");
   const [showStarters, setShowStarters] = useState(true);
@@ -103,107 +94,101 @@ const ChatInterface = ({
         </div>
       </header>
       
-      {/* Chat Interface with Sidebar */}
-      <SidebarProvider defaultOpen={false} className="flex-1">
-        <div className="flex h-[calc(100vh-5rem)] bg-gray-50 relative">
-          <ChatSidebar />
-          
-          <div className="flex-1 flex flex-col relative">
-            <ScrollArea className="flex-1 p-4 pt-6">
-              <div className="max-w-3xl mx-auto space-y-4">
-                {showStarters && messages.length === 1 && (
-                  <div className="mb-8">
-                    <h2 className="text-xl font-semibold mb-4">{workflowTitle}</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {conversationStarters.map((starter) => (
-                        <Button
-                          key={starter.id}
-                          variant="outline"
-                          className="text-left h-auto py-3 px-4 whitespace-normal"
-                          onClick={() => handleStarterClick(starter.text)}
-                        >
-                          {starter.text}
-                        </Button>
-                      ))}
-                    </div>
+      {/* Chat Interface without Sidebar */}
+      <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50 relative">
+        <div className="flex-1 flex flex-col relative">
+          <ScrollArea className="flex-1 p-4 pt-6">
+            <div className="max-w-3xl mx-auto space-y-4">
+              {showStarters && messages.length === 0 && (
+                <div className="mb-8 flex flex-col items-center justify-center pt-12">
+                  <h2 className="text-2xl font-semibold mb-6 text-center">{workflowTitle}</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
+                    {conversationStarters.map((starter) => (
+                      <Button
+                        key={starter.id}
+                        variant="outline"
+                        className="text-left h-auto py-3 px-4 whitespace-normal"
+                        onClick={() => handleStarterClick(starter.text)}
+                      >
+                        {starter.text}
+                      </Button>
+                    ))}
                   </div>
-                )}
+                </div>
+              )}
 
-                {messages.map((message) => (
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.sender === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
                   <div
-                    key={message.id}
-                    className={`flex ${
-                      message.sender === "user" ? "justify-end" : "justify-start"
+                    className={`flex gap-3 max-w-[80%] ${
+                      message.sender === "user" ? "flex-row-reverse" : ""
                     }`}
                   >
                     <div
-                      className={`flex gap-3 max-w-[80%] ${
-                        message.sender === "user" ? "flex-row-reverse" : ""
+                      className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                        message.sender === "user"
+                          ? "bg-panta-blue"
+                          : "bg-gray-100"
                       }`}
                     >
+                      {message.sender === "user" ? (
+                        <User className="h-5 w-5 text-white" />
+                      ) : (
+                        <Feather className="h-5 w-5 text-panta-blue" />
+                      )}
+                    </div>
+                    <div
+                      className={`rounded-lg p-4 ${
+                        message.sender === "user"
+                          ? "bg-panta-blue text-white"
+                          : "bg-gray-100 text-gray-800"
+                      }`}
+                    >
+                      <p>{message.content}</p>
                       <div
-                        className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                        className={`text-xs mt-2 ${
                           message.sender === "user"
-                            ? "bg-panta-blue"
-                            : "bg-gray-100"
+                            ? "text-white/70"
+                            : "text-gray-500"
                         }`}
                       >
-                        {message.sender === "user" ? (
-                          <User className="h-5 w-5 text-white" />
-                        ) : (
-                          <div className="h-5 w-5 flex items-center justify-center">
-                            <Logo small />
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className={`rounded-lg p-4 ${
-                          message.sender === "user"
-                            ? "bg-panta-blue text-white"
-                            : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        <p>{message.content}</p>
-                        <div
-                          className={`text-xs mt-2 ${
-                            message.sender === "user"
-                              ? "text-white/70"
-                              : "text-gray-500"
-                          }`}
-                        >
-                          {message.timestamp.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </div>
+                        {message.timestamp.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            </ScrollArea>
-            
-            <div className="border-t p-4 bg-white">
-              <SearchChat autoFocus={true} value={input} onChange={(e) => setInput(e.target.value)} />
-              <div className="text-xs text-center mt-3 text-gray-500">
-                PANTA Flows can make mistakes. Please check important information.
-              </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+          
+          <div className="border-t p-4 bg-white">
+            <SearchChat autoFocus={true} value={input} onChange={(e) => setInput(e.target.value)} />
+            <div className="text-xs text-center mt-3 text-gray-500">
+              PANTA Flows can make mistakes. Please check important information.
             </div>
           </div>
-
-          <div className="absolute top-4 right-4 z-10">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={handleClose}
-              className="rounded-full hover:bg-gray-200"
-            >
-              <X className="h-5 w-5" />
-              <span className="sr-only">Close chat</span>
-            </Button>
-          </div>
         </div>
-      </SidebarProvider>
+
+        <div className="absolute top-4 right-4 z-10">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleClose}
+            className="rounded-full hover:bg-gray-200"
+          >
+            <X className="h-5 w-5" />
+            <span className="sr-only">Close chat</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

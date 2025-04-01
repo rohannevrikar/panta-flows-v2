@@ -22,7 +22,15 @@ import { Slider } from "@/components/ui/slider";
 import NewWorkflowDialog from "@/components/NewWorkflowDialog";
 import { toast } from "sonner";
 
-const workflows = [
+interface Workflow {
+  id: string;
+  title: string;
+  description: string;
+  icon: React.ElementType;
+  color?: string;
+}
+
+const workflows: Workflow[] = [
   {
     id: "chat",
     title: "Chat Assistant",
@@ -106,7 +114,7 @@ const Index = () => {
   const [historyData, setHistoryData] = useState(historyItems);
   const [sliderValue, setSliderValue] = useState([50]);
   const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
-  const [availableWorkflows, setAvailableWorkflows] = useState(workflows);
+  const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>(workflows);
   
   const handleSearchFocus = () => {
     setShowChat(true);

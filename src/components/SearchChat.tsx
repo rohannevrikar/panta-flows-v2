@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 interface SearchChatProps {
   onFocus?: () => void;
   autoFocus?: boolean;
+  value?: string;
+  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const SearchChat = ({ onFocus, autoFocus = false }: SearchChatProps) => {
+const SearchChat = ({ onFocus, autoFocus = false, value, onChange }: SearchChatProps) => {
   const [query, setQuery] = useState("");
   const [files, setFiles] = useState<File[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -22,11 +24,13 @@ const SearchChat = ({ onFocus, autoFocus = false }: SearchChatProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query.trim() && files.length === 0) return;
+    if ((!query.trim() && !value?.trim()) && files.length === 0) return;
     
     // Handle search/chat submission with files
-    console.log("Search or chat:", query, "Files:", files);
-    setQuery("");
+    console.log("Search or chat:", value || query, "Files:", files);
+    if (!value) {
+      setQuery("");
+    }
     setFiles([]);
   };
 
@@ -39,6 +43,14 @@ const SearchChat = ({ onFocus, autoFocus = false }: SearchChatProps) => {
 
   const handleFocus = () => {
     if (onFocus) onFocus();
+  };
+
+  const handleQueryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onChange) {
+      onChange(e);
+    } else {
+      setQuery(e.target.value);
+    }
   };
 
   const removeFile = (index: number) => {
@@ -76,8 +88,8 @@ const SearchChat = ({ onFocus, autoFocus = false }: SearchChatProps) => {
           ref={inputRef}
           type="text"
           placeholder="Search or start a conversation..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          value={value !== undefined ? value : query}
+          onChange={handleQueryChange}
           onFocus={handleFocus}
           className="ai-chat-input pl-10 pr-24"
         />
@@ -102,7 +114,7 @@ const SearchChat = ({ onFocus, autoFocus = false }: SearchChatProps) => {
             type="submit" 
             size="icon"
             className="h-8 w-8 bg-panta-blue hover:bg-panta-blue-600"
-            disabled={!query.trim() && files.length === 0}
+            disabled={!(value || query).trim() && files.length === 0}
           >
             <Send className="h-4 w-4" />
           </Button>
