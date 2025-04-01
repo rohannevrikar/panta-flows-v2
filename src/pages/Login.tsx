@@ -10,11 +10,14 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { getClientConfig } from "@/lib/client-themes";
 import Logo from "@/components/Logo";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 const Login = () => {
   const { theme, clientId } = useTheme();
   const clientConfig = getClientConfig(clientId);
   const { login, loginWithGoogle } = useAuth();
+  const { translate } = useLanguage();
   
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -71,14 +74,19 @@ const Login = () => {
         <div className="absolute top-8 left-8">
           <Logo className="text-white" variant="white" />
         </div>
+        
+        {/* Language selector */}
+        <div className="absolute top-8 right-8">
+          <LanguageSelector />
+        </div>
 
         <div className="mt-24 lg:mt-0 z-10 max-w-lg">
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
-            {theme.tagline || "discover designInspiration"}
+            {theme.tagline || translate('login.tagline') || "discover designInspiration"}
           </h1>
           
           <p className="text-white/90 text-xl max-w-md mt-4 leading-relaxed">
-            {clientConfig.landingPageText || "Unleash your creativity with AI-powered workflows designed for modern teams"}
+            {clientConfig.landingPageText || translate('login.subtitle') || "Unleash your creativity with AI-powered workflows designed for modern teams"}
           </p>
 
           {/* Modern "prompt tag" design */}
@@ -105,9 +113,9 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-gray-50">
         <Card className="w-full max-w-md p-8 border shadow-lg bg-white rounded-xl">
           <div className="text-center mb-8">
-            <h2 className="text-xl font-medium text-gray-600">Willkommen zurück!</h2>
+            <h2 className="text-xl font-medium text-gray-600">{translate('login.welcome') || "Willkommen zurück!"}</h2>
             <h1 className="text-3xl font-bold mt-2 mb-2" 
-              style={{ color: theme.primaryColor }}>Log dich ein</h1>
+              style={{ color: theme.primaryColor }}>{translate('login.loginAction') || "Log dich ein"}</h1>
           </div>
 
           <CardContent className="p-0">
@@ -120,7 +128,7 @@ const Login = () => {
             
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">E-Mail</Label>
+                <Label htmlFor="email">{translate('login.email') || "E-Mail"}</Label>
                 <Input 
                   id="email" 
                   type="email" 
@@ -134,7 +142,7 @@ const Login = () => {
               
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label htmlFor="password">Passwort</Label>
+                  <Label htmlFor="password">{translate('login.password') || "Passwort"}</Label>
                 </div>
                 <div className="relative">
                   <Input 
@@ -157,7 +165,7 @@ const Login = () => {
                 </div>
                 <div className="text-right">
                   <a href="#" className="text-sm text-gray-500 hover:underline">
-                    Passwort vergessen?
+                    {translate('login.forgotPassword') || "Passwort vergessen?"}
                   </a>
                 </div>
               </div>
@@ -168,7 +176,7 @@ const Login = () => {
                 style={{ backgroundColor: theme.primaryColor }}
                 disabled={isLoading}
               >
-                {isLoading ? "Logging in..." : "Einloggen"}
+                {isLoading ? (translate('login.loggingIn') || "Logging in...") : (translate('login.login') || "Einloggen")}
               </Button>
               
               <div className="relative my-6">
@@ -176,7 +184,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">oder</span>
+                  <span className="px-4 bg-white text-gray-500">{translate('login.or') || "oder"}</span>
                 </div>
               </div>
               
@@ -190,7 +198,7 @@ const Login = () => {
                 <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_24dp.png" 
                      alt="Google" 
                      className="h-5 mr-2" />
-                Mit Google anmelden
+                {translate('login.loginWithGoogle') || "Mit Google anmelden"}
               </Button>
             </form>
           </CardContent>
