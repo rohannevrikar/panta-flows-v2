@@ -24,18 +24,15 @@ const WorkflowCard = ({
 }: WorkflowCardProps) => {
   const [isHovering, setIsHovering] = useState(false);
   
-  const handleEdit = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleEdit = () => {
     toast.info(`Editing workflow: ${title}`);
   };
   
-  const handleSettings = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleSettings = () => {
     toast.info(`Opening settings for: ${title}`);
   };
   
-  const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const handleDelete = () => {
     toast.error(`Delete workflow: ${title}`, {
       description: "This action can't be undone.",
       action: {
@@ -48,7 +45,7 @@ const WorkflowCard = ({
   return (
     <div 
       className={cn(
-        "workflow-card group transition-all duration-200 relative p-6 border rounded-lg bg-white shadow-sm hover:shadow-md flex flex-col items-center", 
+        "workflow-card group transition-all duration-200 relative p-6 rounded-lg bg-white/80 backdrop-blur-sm shadow-sm hover:shadow-md flex flex-col items-center", 
         className
       )}
       onClick={onClick}

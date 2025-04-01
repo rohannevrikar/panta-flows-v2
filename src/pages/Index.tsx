@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { 
   Bot, 
@@ -25,6 +24,7 @@ import { Slider } from "@/components/ui/slider";
 import NewWorkflowDialog from "@/components/NewWorkflowDialog";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "@/contexts/ThemeContext";
 
 interface Workflow {
   id: string;
@@ -114,6 +114,7 @@ const historyItems = [
 
 const Index = () => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("all");
   const [showChat, setShowChat] = useState(false);
   const [historyData, setHistoryData] = useState(historyItems);
@@ -189,7 +190,10 @@ const Index = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ 
+      background: `linear-gradient(135deg, ${theme.primaryColor} 0%, ${theme.accentColor} 100%)`,
+      backgroundAttachment: "fixed" 
+    }}>
       {showChat ? (
         <ChatInterface 
           onClose={handleCloseChat} 
@@ -231,10 +235,10 @@ const Index = () => {
             
             <section className="mb-10">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-medium">Workflows</h2>
+                <h2 className="text-xl font-medium text-white">Workflows</h2>
                 <Button 
                   variant="outline" 
-                  className="gap-1 hover:bg-black hover:text-white"
+                  className="gap-1 hover:bg-black hover:text-white bg-white/20 backdrop-blur-sm text-white border-white/30"
                   onClick={() => setShowNewWorkflowDialog(true)}
                 >
                   <Plus className="h-4 w-4" />
@@ -243,10 +247,10 @@ const Index = () => {
               </div>
               
               <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-6">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="recent">Recent</TabsTrigger>
-                  <TabsTrigger value="favorites">Favorites</TabsTrigger>
+                <TabsList className="mb-6 bg-white/20 backdrop-blur-sm">
+                  <TabsTrigger value="all" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">All</TabsTrigger>
+                  <TabsTrigger value="recent" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Recent</TabsTrigger>
+                  <TabsTrigger value="favorites" className="data-[state=active]:bg-white data-[state=active]:text-black text-white">Favorites</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="all" className="animate-fade-in">
@@ -293,14 +297,14 @@ const Index = () => {
                 </TabsContent>
               </Tabs>
               
-              <div className="mt-8 bg-white p-6 rounded-lg border shadow-sm">
+              <div className="mt-8 bg-white/20 backdrop-blur-sm p-6 rounded-lg border border-white/30 text-white shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
-                  <SlidersHorizontal size={20} className="text-panta-blue" />
+                  <SlidersHorizontal size={20} className="text-white" />
                   <h3 className="font-medium">Workflow Settings</h3>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">Adjust the creativity level for your workflows</p>
+                <p className="text-sm text-white/80 mb-4">Adjust the creativity level for your workflows</p>
                 <div className="flex items-center gap-4">
-                  <span className="text-sm text-gray-600">Conservative</span>
+                  <span className="text-sm">Conservative</span>
                   <Slider 
                     className="flex-1"
                     value={sliderValue}
@@ -308,28 +312,28 @@ const Index = () => {
                     max={100}
                     step={1}
                   />
-                  <span className="text-sm text-gray-600">Creative</span>
+                  <span className="text-sm">Creative</span>
                 </div>
                 <div className="text-center mt-1">
-                  <span className="text-xs text-gray-500">{sliderValue[0]}%</span>
+                  <span className="text-xs text-white/80">{sliderValue[0]}%</span>
                 </div>
               </div>
             </section>
             
             <section>
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-medium">Recent History</h2>
+                <h2 className="text-xl font-medium text-white">Recent History</h2>
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="hover:bg-black hover:text-white"
+                  className="hover:bg-white/30 text-white hover:text-white"
                   onClick={() => navigate("/history")}
                 >
                   View All
                 </Button>
               </div>
               
-              <div className="bg-white rounded-lg shadow-sm border">
+              <div className="bg-white/20 backdrop-blur-sm rounded-lg shadow-sm border border-white/30">
                 {historyData.map((item) => (
                   <HistoryItem
                     key={item.id}
