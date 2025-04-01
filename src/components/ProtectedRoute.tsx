@@ -14,13 +14,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children, 
   redirectTo = "/login" 
 }) => {
-  const { isAuthenticated, loading, user } = useAuth();
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
     // Check if user is authenticated but no longer valid
     const checkAuthValidity = () => {
-      if (!user && isAuthenticated) {
+      if (!user) {
         toast.error("Your session has expired. Please login again.");
         navigate(redirectTo);
       }
@@ -29,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     if (!loading) {
       checkAuthValidity();
     }
-  }, [isAuthenticated, loading, navigate, redirectTo, user]);
+  }, [loading, navigate, redirectTo, user]);
   
   if (loading) {
     return (
@@ -40,7 +40,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
   
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to={redirectTo} replace />;
   }
   

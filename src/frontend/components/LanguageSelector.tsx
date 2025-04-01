@@ -9,13 +9,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/frontend/components/ui/dropdown-menu";
+import { Language } from "@/services/types";
 
 const LanguageSelector = () => {
-  const { language, setLanguage, languages } = useLanguage();
+  const { language, setLanguage } = useLanguage();
 
-  const handleLanguageChange = (newLanguage: string) => {
+  const handleLanguageChange = (newLanguage: Language) => {
     setLanguage(newLanguage);
   };
+
+  // Available languages
+  const availableLanguages: Language[] = ["en", "de", "fr", "es"];
 
   // Map language codes to display names and flags
   const languageInfo = {
@@ -33,7 +37,7 @@ const LanguageSelector = () => {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        {languages.map((lang) => (
+        {availableLanguages.map((lang) => (
           <DropdownMenuItem
             key={lang}
             className="cursor-pointer flex items-center justify-between"

@@ -1,3 +1,4 @@
+
 import React, {
   createContext,
   useContext,
@@ -5,39 +6,27 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { authService } from "@/services/authService";
+import { authService, User } from "@/services/authService";
 import { userService } from "@/services/userService";
-import { Role } from "@/models/Role";
+import { UserRole, UserSettings } from "@/services/types";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-export interface User {
-  id: string;
-  email: string;
-  name: string;
-  avatar?: string;
-  role?: UserRole;
-  clientId?: string; // Changed from client_id to clientId for consistency
+// Update User interface to include settings
+interface ExtendedUser extends User {
   settings?: UserSettings;
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: ExtendedUser | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password?: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
-  updateUser: (userData: Partial<User>) => Promise<void>;
+  updateUser: (userData: Partial<ExtendedUser>) => Promise<void>;
 }
-
-interface UserSettings {
-  notifications: boolean;
-  theme: string;
-}
-
-type UserRole = "admin" | "user" | "client-admin";
 
 const DEFAULT_USER_AVATAR = "https://avatar.iran.liara.run/public/boy";
 const DEFAULT_CLIENT_ID = "panta";
@@ -56,40 +45,40 @@ const AuthContext = createContext<AuthContextType>({
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<ExtendedUser | null>(null);
   const [token, setToken] = useState<string | null>(
-    localStorage.getItem("token")
+    localStorage.getItem("auth_token")
   );
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
     const loadUserFromToken = async () => {
-      const storedToken = localStorage.getItem("token");
+      const storedToken = localStorage.getItem("auth_token");
       if (storedToken) {
         setLoading(true);
         try {
-          const response = await userService.getMe();
+          const response = await authService.getCurrentUser();
+          
+          if (response) {
+            const extendedUser: ExtendedUser = {
+              ...response,
+              avatar: response.avatar || DEFAULT_USER_AVATAR,
+              role: response.role || "user",
+              clientId: response.clientId || DEFAULT_CLIENT_ID,
+              settings: {
+                notifications: true,
+                theme: "light",
+              },
+            };
 
-          const user: User = {
-            id: response.id,
-            email: response.email,
-            name: response.name,
-            avatar: response.avatar || DEFAULT_USER_AVATAR,
-            role: response.role || "user",
-            clientId: response.clientId || DEFAULT_CLIENT_ID,
-            settings: {
-              notifications: response.settings?.notifications || true,
-              theme: response.settings?.theme || "light",
-            },
-          };
-
-          setUser(user);
-          setToken(storedToken);
+            setUser(extendedUser);
+            setToken(storedToken);
+          }
         } catch (error) {
           console.error("Error loading user from token:", error);
           // Clear invalid token
-          localStorage.removeItem("token");
+          localStorage.removeItem("auth_token");
           setToken(null);
           setUser(null);
         } finally {
@@ -106,26 +95,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithEmailPassword = async (email: string, password: string) => {
     try {
       setLoading(true);
-      // For demo, simulate an API call
-      const response = await authService.login(email, password);
+      const response = await authService.login({ email, password });
 
-      const user: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+      const extendedUser: ExtendedUser = {
+        ...response.user,
         avatar: response.user.avatar || DEFAULT_USER_AVATAR,
         role: response.user.role || "user",
-        clientId: response.user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        clientId: response.user.clientId || DEFAULT_CLIENT_ID,
         settings: {
-          notifications: response.user.settings?.notifications || true,
-          theme: response.user.settings?.theme || "light",
+          notifications: true,
+          theme: "light",
         },
       };
 
-      setUser(user);
-      setToken(response.access_token);
-      localStorage.setItem("token", response.access_token);
-      toast.success(`Welcome ${user.name}!`);
+      setUser(extendedUser);
+      setToken(response.token);
+      localStorage.setItem("auth_token", response.token);
+      toast.success(`Welcome ${extendedUser.name}!`);
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
@@ -142,26 +128,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const loginWithGoogle = async () => {
     try {
       setLoading(true);
-      // For demo, simulate an API call
       const response = await authService.loginWithGoogle();
 
-      const user: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+      const extendedUser: ExtendedUser = {
+        ...response.user,
         avatar: response.user.avatar || DEFAULT_USER_AVATAR,
         role: response.user.role || "user",
-        clientId: response.user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        clientId: response.user.clientId || DEFAULT_CLIENT_ID,
         settings: {
-          notifications: response.user.settings?.notifications || true,
-          theme: response.user.settings?.theme || "light",
+          notifications: true,
+          theme: "light",
         },
       };
 
-      setUser(user);
-      setToken(response.access_token);
-      localStorage.setItem("token", response.access_token);
-      toast.success(`Welcome ${user.name}!`);
+      setUser(extendedUser);
+      setToken(response.token);
+      localStorage.setItem("auth_token", response.token);
+      toast.success(`Welcome ${extendedUser.name}!`);
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
@@ -178,7 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem("token");
+    localStorage.removeItem("auth_token");
     toast.success("Logged out successfully");
     navigate("/login");
   };
@@ -186,26 +169,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (name: string, email: string, password: string) => {
     try {
       setLoading(true);
-      // For demo, simulate an API call
-      const response = await authService.register(name, email, password);
+      const response = await authService.register({ email, password, name });
 
-      const user: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
+      const extendedUser: ExtendedUser = {
+        ...response.user,
         avatar: response.user.avatar || DEFAULT_USER_AVATAR,
         role: response.user.role || "user",
-        clientId: response.user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        clientId: response.user.clientId || DEFAULT_CLIENT_ID,
         settings: {
-          notifications: response.user.settings?.notifications || true,
-          theme: response.user.settings?.theme || "light",
+          notifications: true,
+          theme: "light",
         },
       };
 
-      setUser(user);
-      setToken(response.access_token);
-      localStorage.setItem("token", response.access_token);
-      toast.success(`Welcome ${user.name}!`);
+      setUser(extendedUser);
+      setToken(response.token);
+      localStorage.setItem("auth_token", response.token);
+      toast.success(`Welcome ${extendedUser.name}!`);
       navigate("/dashboard");
     } catch (error) {
       if (error instanceof Error) {
@@ -220,22 +200,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Update user function (for profile updates)
-  const updateUser = async (userData: Partial<User>) => {
+  const updateUser = async (userData: Partial<ExtendedUser>) => {
     if (!user) return;
 
     try {
       setLoading(true);
+      const response = await authService.updateProfile(userData);
 
-      // For demo, simulate an API call
-      const response = await authService.updateUser(userData);
-
-      const updatedUser: User = {
+      const updatedUser: ExtendedUser = {
         ...user,
         ...response,
-        clientId: response.clientId || user.clientId || DEFAULT_CLIENT_ID, // Changed from client_id to clientId
+        clientId: response.clientId || user.clientId || DEFAULT_CLIENT_ID,
         settings: {
-          ...user.settings,
-          ...response.settings,
+          ...(user.settings || {}),
+          ...(userData.settings || {}),
         },
       };
 

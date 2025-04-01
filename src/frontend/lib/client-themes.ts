@@ -1,4 +1,5 @@
 
+import { ThemeConfig } from "@/frontend/lib/theme-utils";
 import { IconName } from '@/frontend/utils/iconMap';
 
 export interface ClientTheme {
@@ -75,12 +76,4 @@ export const getClientTheme = (clientId: string): ThemeConfig => {
   };
 };
 
-// Helper type for importing into ThemeContext
-export interface ThemeConfig {
-  primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  logo?: string;
-  clientName: string;
-  tagline?: string;
-}
+export type { ThemeConfig };

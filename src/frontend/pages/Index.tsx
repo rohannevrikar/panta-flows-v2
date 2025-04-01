@@ -1,124 +1,118 @@
 
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/frontend/contexts/AuthContext";
-import { workflowService } from "@/frontend/services/workflowService";
-import { Search } from "lucide-react";
-import { Input } from "@/frontend/components/ui/input";
-import { Button } from "@/frontend/components/ui/button";
-import WorkflowCard from "@/frontend/components/WorkflowCard";
-import ThemeSwitcher from "@/components/ThemeSwitcher";
-import NewWorkflowDialog from "@/frontend/components/NewWorkflowDialog";
-import { toast } from "sonner";
+import React, { useEffect, useState } from 'react';
+import { useAuth } from '@/frontend/contexts/AuthContext';
+import { useTheme } from '@/frontend/contexts/ThemeContext';
+import { workflowService } from '@/frontend/services/workflowService';
+import { Button } from '@/frontend/components/ui/button';
+import { Card } from '@/frontend/components/ui/card';
+import { PlusCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs';
+import WorkflowCard from '@/frontend/components/WorkflowCard';
+import NewWorkflowDialog from '@/frontend/components/NewWorkflowDialog';
+import { toast } from 'sonner';
+import { UserRole } from '@/services/types';
 
-// Simplified type for the Workflow
+// Workflow type
 interface Workflow {
   id: string;
   title: string;
   description: string;
   iconName: string;
-  isPublic: boolean;
   isFavorite: boolean;
+  isPublic: boolean;
+  clientId?: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 const Index = () => {
-  const navigate = useNavigate();
   const { user } = useAuth();
-  const [workflows, setWorkflows] = useState<Workflow[]>([]);
-  const [filteredWorkflows, setFilteredWorkflows] = useState<Workflow[]>([]);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [newWorkflowDialogOpen, setNewWorkflowDialogOpen] = useState(false);
+  const { clientId } = useTheme();
+  const [workflowItems, setWorkflowItems] = useState<Workflow[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isDialogOpen, setIsDialogOpen] = useState<boolean>(false);
 
-  const fetchWorkflows = async () => {
+  useEffect(() => {
+    loadWorkflows();
+  }, [activeTab, clientId]);
+  
+  const loadWorkflows = async () => {
+    setIsLoading(true);
     try {
-      setLoading(true);
-      const data = await workflowService.getWorkflows();
-      setWorkflows(data);
-      setFilteredWorkflows(data);
+      // Use filter based on activeTab
+      let filter = {};
+      if (activeTab === "favorites") {
+        filter = { isFavorite: true };
+      }
+      
+      const items = await workflowService.getWorkflows(filter);
+      setWorkflowItems(items);
     } catch (error) {
-      console.error("Error fetching workflows:", error);
-      toast.error("Failed to load workflows");
+      console.error('Error loading workflows:', error);
+      toast.error("Could not load workflows. Please try again later.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchWorkflows();
-  }, [user]);
-
-  useEffect(() => {
-    if (searchTerm) {
-      const filtered = workflows.filter(workflow => 
-        workflow.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        workflow.description.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-      setFilteredWorkflows(filtered);
-    } else {
-      setFilteredWorkflows(workflows);
-    }
-  }, [searchTerm, workflows]);
-
-  const handleFavoriteToggle = async (id: string) => {
+  const handleCreateWorkflow = async (data: Partial<Workflow>) => {
     try {
-      // Update UI first for better UX
-      setWorkflows(prevWorkflows => 
-        prevWorkflows.map(workflow => 
-          workflow.id === id ? { ...workflow, isFavorite: !workflow.isFavorite } : workflow
-        )
-      );
-      
-      // Update on server
-      await workflowService.toggleFavorite(id);
+      await workflowService.createWorkflow({
+        ...data,
+        clientId,
+        isPublic: true
+      });
+      toast.success("Workflow created successfully!");
+      loadWorkflows();
+      setIsDialogOpen(false);
     } catch (error) {
-      console.error("Error toggling favorite:", error);
-      toast.error("Failed to update favorite status");
-      
-      // Revert UI change on error
-      setWorkflows(prevWorkflows => 
-        prevWorkflows.map(workflow => 
-          workflow.id === id ? { ...workflow, isFavorite: !workflow.isFavorite } : workflow
-        )
-      );
+      console.error('Error creating workflow:', error);
+      toast.error("Failed to create workflow. Please try again.");
     }
   };
+
+  const handleToggleFavorite = async (id: string, currentValue: boolean) => {
+    try {
+      await workflowService.updateWorkflow(id, { isFavorite: !currentValue });
+      // Update the local state
+      setWorkflowItems(workflowItems.map(item => 
+        item.id === id ? { ...item, isFavorite: !currentValue } : item
+      ));
+    } catch (error) {
+      console.error('Error updating workflow:', error);
+      toast.error("Failed to update workflow. Please try again.");
+    }
+  };
+
+  const canCreateWorkflow = user && (user.role === "client_admin" as UserRole || user.role === "super_admin" as UserRole);
 
   return (
-    <div className="container mx-auto py-8 px-4">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        
-        {user?.role === "admin" && (
-          <ThemeSwitcher visible={true} />
+    <div className="container mx-auto py-6 space-y-6">
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold">Workflows</h1>
+        {canCreateWorkflow && (
+          <Button onClick={() => setIsDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4" />
+            New Workflow
+          </Button>
         )}
       </div>
-      
-      <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
-        <div className="relative w-full md:max-w-md">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-          <Input
-            placeholder="Search workflows..."
-            className="pl-10"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
+
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList>
+          <TabsTrigger value="all">All</TabsTrigger>
+          <TabsTrigger value="favorites">Favorites</TabsTrigger>
+        </TabsList>
         
-        <Button onClick={() => setNewWorkflowDialogOpen(true)}>
-          New Workflow
-        </Button>
-      </div>
-      
-      {loading ? (
-        <div className="flex justify-center py-8">
-          <div className="animate-spin w-8 h-8 border-4 border-primary rounded-full border-t-transparent"></div>
-        </div>
-      ) : (
-        <>
-          {filteredWorkflows.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredWorkflows.map((workflow) => (
+        <TabsContent value={activeTab} className="mt-6">
+          {isLoading ? (
+            <div className="flex justify-center p-12">
+              <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent"></div>
+            </div>
+          ) : workflowItems.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {workflowItems.map((workflow) => (
                 <WorkflowCard
                   key={workflow.id}
                   id={workflow.id}
@@ -126,26 +120,27 @@ const Index = () => {
                   description={workflow.description}
                   iconName={workflow.iconName}
                   isFavorite={workflow.isFavorite}
-                  onFavoriteToggle={() => handleFavoriteToggle(workflow.id)}
-                  onClick={() => navigate(`/chat?workflowId=${workflow.id}`)}
+                  onClick={() => {}}
                 />
               ))}
             </div>
           ) : (
-            <div className="text-center py-12">
-              <p className="text-lg text-gray-500 mb-4">No workflows found</p>
-              <Button onClick={() => setNewWorkflowDialogOpen(true)}>
-                Create New Workflow
-              </Button>
+            <div className="text-center p-12 border rounded-lg">
+              <p className="text-muted-foreground">No workflows found.</p>
+              {canCreateWorkflow && (
+                <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
+                  Create your first workflow
+                </Button>
+              )}
             </div>
           )}
-        </>
-      )}
-      
-      <NewWorkflowDialog
-        open={newWorkflowDialogOpen}
-        onOpenChange={setNewWorkflowDialogOpen}
-        onWorkflowCreated={fetchWorkflows}
+        </TabsContent>
+      </Tabs>
+
+      <NewWorkflowDialog 
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+        onSubmit={handleCreateWorkflow}
       />
     </div>
   );

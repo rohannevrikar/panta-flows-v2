@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { getClientTheme, ThemeConfig } from "@/frontend/lib/client-themes";
-import { applyThemeColors } from "@/frontend/lib/theme-utils";
+import { getClientTheme } from "@/frontend/lib/client-themes";
+import { applyThemeColors, ThemeConfig } from "@/frontend/lib/theme-utils";
 import { toast } from "sonner";
 
 interface ThemeContextType {
@@ -15,7 +15,14 @@ interface ThemeContextType {
 const DEFAULT_CLIENT_ID = "panta";
 
 // Get default theme based on default client
-const defaultTheme = getClientTheme(DEFAULT_CLIENT_ID);
+const defaultTheme: ThemeConfig = {
+  primaryColor: "#1CB5E0", 
+  secondaryColor: "#FF8C00",
+  accentColor: "#26A69A",
+  logo: "/panta-logo.png",
+  clientName: "PANTA",
+  tagline: "discover designInspiration"
+};
 
 const ThemeContext = createContext<ThemeContextType>({
   theme: defaultTheme,
@@ -88,3 +95,5 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     </ThemeContext.Provider>
   );
 };
+
+export type { ThemeConfig };
