@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Settings, LogOut, User, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ProfileDropdownProps {
   name: string;
@@ -19,11 +20,20 @@ interface ProfileDropdownProps {
 
 const ProfileDropdown = ({ name, email, avatarUrl }: ProfileDropdownProps) => {
   const navigate = useNavigate();
+  const { logout } = useAuth();
   const initials = name
     .split(' ')
     .map(n => n[0])
     .join('')
     .toUpperCase();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <DropdownMenu>
@@ -71,7 +81,10 @@ const ProfileDropdown = ({ name, email, avatarUrl }: ProfileDropdownProps) => {
           <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-white hover:bg-black hover:text-white">
+        <DropdownMenuItem 
+          className="cursor-pointer text-red-500 focus:text-white hover:bg-black hover:text-white"
+          onClick={handleLogout}
+        >
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>

@@ -18,26 +18,16 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Check if token is expired or invalid
-    const checkTokenValidity = async () => {
-      const token = localStorage.getItem("auth_token");
-      if (token) {
-        try {
-          // This is a simple check - could be enhanced with JWT expiry checks
-          if (!user) {
-            toast.error("Your session has expired. Please login again.");
-            localStorage.removeItem("auth_token");
-            localStorage.removeItem("user_info");
-            navigate(redirectTo);
-          }
-        } catch (error) {
-          console.error("Token validation error:", error);
-        }
+    // Check if user is authenticated but no longer valid
+    const checkAuthValidity = () => {
+      if (!user && isAuthenticated) {
+        toast.error("Your session has expired. Please login again.");
+        navigate(redirectTo);
       }
     };
     
-    if (!loading && isAuthenticated) {
-      checkTokenValidity();
+    if (!loading) {
+      checkAuthValidity();
     }
   }, [isAuthenticated, loading, navigate, redirectTo, user]);
   

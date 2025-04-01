@@ -3,11 +3,14 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { authService, User } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { onAuthStateChanged } from "firebase/auth";
+import { auth } from "../config/firebase";
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithGoogle: () => Promise<void>;
   logout: () => void;
   register: (name: string, email: string, password: string) => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
@@ -22,32 +25,57 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const initAuth = async () => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       try {
-        const currentUser = await authService.getCurrentUser();
-        setUser(currentUser);
+        if (firebaseUser) {
+          const currentUser = {
+            id: firebaseUser.uid,
+            name: firebaseUser.displayName || "User",
+            email: firebaseUser.email || "",
+            avatar: firebaseUser.photoURL || undefined,
+          };
+          setUser(currentUser);
+        } else {
+          setUser(null);
+        }
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error("Auth state change error:", error);
+        setUser(null);
       } finally {
         setLoading(false);
       }
-    };
+    });
     
-    initAuth();
+    return () => unsubscribe();
   }, []);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const response = await authService.login({ email, password });
-      localStorage.setItem("auth_token", response.token);
-      localStorage.setItem("user_info", JSON.stringify(response.user));
       setUser(response.user);
       toast.success("Login successful!");
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
-      toast.error("Login failed. Please check your credentials.");
+      toast.error(error.message || "Login failed. Please check your credentials.");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const response = await authService.loginWithGoogle();
+      setUser(response.user);
+      toast.success("Login successful!");
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("Google login error:", error);
+      toast.error(error.message || "Google login failed. Please try again.");
       throw error;
     } finally {
       setLoading(false);
@@ -72,14 +100,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setLoading(true);
     try {
       const response = await authService.register({ name, email, password });
-      localStorage.setItem("auth_token", response.token);
-      localStorage.setItem("user_info", JSON.stringify(response.user));
       setUser(response.user);
       toast.success("Registration successful!");
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      toast.error("Registration failed. Please try again.");
+      toast.error(error.message || "Registration failed. Please try again.");
       throw error;
     } finally {
       setLoading(false);
@@ -89,13 +115,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const updateProfile = async (userData: Partial<User>) => {
     setLoading(true);
     try {
-      const response = await authService.updateProfile(userData);
-      setUser(prev => prev ? { ...prev, ...userData } : null);
-      localStorage.setItem("user_info", JSON.stringify(response.user));
+      const updatedUser = await authService.updateProfile(userData);
+      setUser(prev => prev ? { ...prev, ...updatedUser } : null);
+      localStorage.setItem("user_info", JSON.stringify(updatedUser));
       toast.success("Profile updated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Profile update error:", error);
-      toast.error("Failed to update profile. Please try again.");
+      toast.error(error.message || "Failed to update profile. Please try again.");
       throw error;
     } finally {
       setLoading(false);
@@ -108,6 +134,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         user,
         loading,
         login,
+        loginWithGoogle,
         logout,
         register,
         updateProfile,

@@ -9,31 +9,39 @@ import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Login = () => {
   const { theme } = useTheme();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { login, loginWithGoogle } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
-    // For test case: allow login without credentials
-    toast({
-      title: "Login successful",
-      description: "Redirecting to dashboard...",
-    });
-    
-    // Simulate loading and navigate immediately to dashboard
-    setTimeout(() => {
+    try {
+      await login(email, password);
+    } catch (error) {
+      console.error("Login error:", error);
       setIsLoading(false);
-      navigate("/dashboard");
-    }, 1000);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    
+    try {
+      await loginWithGoogle();
+    } catch (error) {
+      console.error("Google login error:", error);
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -97,6 +105,7 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12"
+                  required
                 />
               </div>
               
@@ -111,6 +120,7 @@ const Login = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     className="h-12 pr-10"
+                    required
                   />
                   <button 
                     type="button"
@@ -149,6 +159,8 @@ const Login = () => {
                 type="button" 
                 variant="outline" 
                 className="w-full h-12"
+                onClick={handleGoogleLogin}
+                disabled={isLoading}
               >
                 <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_24dp.png" 
                      alt="Google" 
