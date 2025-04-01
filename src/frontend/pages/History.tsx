@@ -37,11 +37,7 @@ const History = () => {
       setHistoryItems(items);
     } catch (error) {
       console.error('Error loading history:', error);
-      toast({
-        title: "Error loading history",
-        description: "Could not load your history. Please try again later.",
-        variant: "destructive"
-      });
+      toast.error("Could not load your history. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -50,38 +46,24 @@ const History = () => {
   const handleDelete = async (id: string) => {
     try {
       await historyService.deleteHistoryItem(id);
-      toast({
-        title: "Item deleted",
-        description: "History item has been deleted successfully.",
-      });
+      toast.success("History item has been deleted successfully.");
       // Reload history after deletion
       loadHistory();
     } catch (error) {
       console.error('Error deleting history item:', error);
-      toast({
-        title: "Error deleting item",
-        description: "Could not delete history item. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Could not delete history item. Please try again.");
     }
   };
 
   const handleStatusChange = async (id: string, newStatus: HistoryItemStatus) => {
     try {
       await historyService.updateHistoryItem(id, { status: newStatus });
-      toast({
-        title: "Status updated",
-        description: `History item status changed to ${newStatus.status}.`,
-      });
+      toast.success(`History item status changed to ${newStatus.status}.`);
       // Reload history after status change
       loadHistory();
     } catch (error) {
       console.error('Error updating history item:', error);
-      toast({
-        title: "Error updating status",
-        description: "Could not update history item status. Please try again.",
-        variant: "destructive"
-      });
+      toast.error("Could not update history item status. Please try again.");
     }
   };
 
