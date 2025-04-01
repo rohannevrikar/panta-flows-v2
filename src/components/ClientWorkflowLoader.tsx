@@ -4,6 +4,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { getClientConfig } from "@/lib/client-themes";
 import { workflowService } from "@/services/workflowService";
 import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ClientWorkflowLoaderProps {
   children: ReactNode;
@@ -11,6 +12,7 @@ interface ClientWorkflowLoaderProps {
 
 const ClientWorkflowLoader = ({ children }: ClientWorkflowLoaderProps) => {
   const { clientId } = useTheme();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -24,7 +26,7 @@ const ClientWorkflowLoader = ({ children }: ClientWorkflowLoaderProps) => {
           return;
         }
         
-        // Check if client has specific workflows defined
+        // Only load default workflows for new clients or when requested
         if (clientConfig.workflows && clientConfig.workflows.length > 0) {
           console.log("Loading client-specific workflows for client:", clientId);
           
@@ -37,10 +39,14 @@ const ClientWorkflowLoader = ({ children }: ClientWorkflowLoaderProps) => {
             workflow => !existingTitles.has(workflow.title)
           );
           
-          // Add new workflows if needed
-          if (newWorkflows.length > 0) {
+          // Add new workflows if needed and user has appropriate permissions (admin)
+          if (newWorkflows.length > 0 && user && (user.role === "super_admin" || user.role === "client_admin")) {
             for (const workflow of newWorkflows) {
-              await workflowService.createWorkflow(workflow);
+              await workflowService.createWorkflow({
+                ...workflow,
+                client_id: clientId,
+                is_public: true, // Default to public for pre-configured workflows
+              });
             }
             toast.success(`${newWorkflows.length} client workflows loaded`);
           }
@@ -53,11 +59,11 @@ const ClientWorkflowLoader = ({ children }: ClientWorkflowLoaderProps) => {
       }
     };
     
-    // Only load workflows if we have a clientId
-    if (clientId) {
+    // Only load workflows if we have a clientId and user is authenticated
+    if (clientId && user) {
       loadClientWorkflows();
     }
-  }, [clientId]);
+  }, [clientId, user]);
 
   return <>{children}</>;
 };

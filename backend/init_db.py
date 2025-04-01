@@ -25,7 +25,8 @@ try:
     
     # Import and create all tables from models
     from app.core.database import Base
-    from app.models.user import User
+    from app.models.user import User, UserRole
+    from app.models.client import Client
     from app.models.workflow import Workflow
     from app.models.history import HistoryItem
     from app.models.chat import ChatSession, ChatMessage

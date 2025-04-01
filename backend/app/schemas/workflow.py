@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 
 class WorkflowBase(BaseModel):
@@ -10,9 +10,11 @@ class WorkflowBase(BaseModel):
     color: Optional[str] = None
     translation_key: Optional[str] = None
     is_favorite: Optional[bool] = False
+    is_public: Optional[bool] = True
+    assigned_user_ids: Optional[List[str]] = []
 
 class WorkflowCreate(WorkflowBase):
-    pass
+    client_id: str
 
 class WorkflowUpdate(BaseModel):
     title: Optional[str] = None
@@ -21,10 +23,13 @@ class WorkflowUpdate(BaseModel):
     color: Optional[str] = None
     translation_key: Optional[str] = None
     is_favorite: Optional[bool] = None
+    is_public: Optional[bool] = None
+    assigned_user_ids: Optional[List[str]] = None
 
 class WorkflowInDB(WorkflowBase):
     id: str
     user_id: str
+    client_id: str
     created_at: datetime
     updated_at: Optional[datetime] = None
 

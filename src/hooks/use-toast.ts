@@ -1,10 +1,11 @@
 
-import { toast as sonnerToast } from "sonner";
+import { toast as sonnerToast, type Toast as SonnerToast } from "sonner";
 
 export type ToastProps = {
   title?: string;
   description?: string;
   action?: React.ReactNode;
+  key?: string;
 };
 
 export type ToasterToast = ToastProps;

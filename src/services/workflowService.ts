@@ -11,6 +11,9 @@ export interface Workflow {
   createdAt: string;
   updatedAt: string;
   isFavorite: boolean;
+  isPublic?: boolean;
+  clientId?: string;
+  assignedUserIds?: string[];
 }
 
 class WorkflowService {
@@ -28,11 +31,32 @@ class WorkflowService {
   }
   
   async createWorkflow(workflow: Partial<Workflow>): Promise<Workflow> {
-    return apiRequest("/workflows", "POST", workflow);
+    // Format the workflow data to match backend expectations
+    const workflowData = {
+      ...workflow,
+      client_id: workflow.clientId,
+      is_public: workflow.isPublic,
+      assigned_user_ids: workflow.assignedUserIds,
+      icon_name: workflow.iconName,
+      translation_key: workflow.translationKey,
+      is_favorite: workflow.isFavorite,
+    };
+    
+    return apiRequest("/workflows", "POST", workflowData);
   }
   
   async updateWorkflow(id: string, workflow: Partial<Workflow>): Promise<Workflow> {
-    return apiRequest(`/workflows/${id}`, "PUT", workflow);
+    // Format the workflow data to match backend expectations
+    const workflowData = {
+      ...workflow,
+      is_public: workflow.isPublic,
+      assigned_user_ids: workflow.assignedUserIds,
+      icon_name: workflow.iconName,
+      translation_key: workflow.translationKey,
+      is_favorite: workflow.isFavorite,
+    };
+    
+    return apiRequest(`/workflows/${id}`, "PUT", workflowData);
   }
   
   async deleteWorkflow(id: string): Promise<void> {

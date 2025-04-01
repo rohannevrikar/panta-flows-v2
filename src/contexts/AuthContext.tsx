@@ -1,10 +1,11 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
-import { authService, User } from "../services/authService";
+import { authService, User, UserRole } from "../services/authService";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../config/firebase";
+import { useTheme } from "./ThemeContext";
 
 interface AuthContextType {
   user: User | null;
@@ -15,6 +16,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
   isAuthenticated: boolean;
+  hasPermission: (requiredRole: UserRole) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,19 +25,33 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
+  const { clientId, setClientId } = useTheme();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setLoading(true);
       try {
         if (firebaseUser) {
+          // Get user data from localStorage first (with role and client_id)
+          const storedUserStr = localStorage.getItem("user_info");
+          const storedUser = storedUserStr ? JSON.parse(storedUserStr) : null;
+          
           const currentUser = {
             id: firebaseUser.uid,
             name: firebaseUser.displayName || "User",
             email: firebaseUser.email || "",
             avatar: firebaseUser.photoURL || undefined,
+            role: storedUser?.role || "user",
+            client_id: storedUser?.client_id || clientId,
           };
+          
           setUser(currentUser);
+          
+          // If the user has a client_id and it's different from the current theme,
+          // update the theme to match the user's client
+          if (currentUser.client_id && currentUser.client_id !== clientId) {
+            setClientId(currentUser.client_id);
+          }
         } else {
           setUser(null);
         }
@@ -48,13 +64,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
     
     return () => unsubscribe();
-  }, []);
+  }, [clientId, setClientId]);
 
   const login = async (email: string, password: string) => {
     setLoading(true);
     try {
       const response = await authService.login({ email, password });
       setUser(response.user);
+      
+      // Update client theme if user has a specific client_id
+      if (response.user.client_id && response.user.client_id !== clientId) {
+        setClientId(response.user.client_id);
+      }
+      
       toast.success("Login successful!");
       navigate("/dashboard");
     } catch (error: any) {
@@ -71,6 +93,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await authService.loginWithGoogle();
       setUser(response.user);
+      
+      // Update client theme if user has a specific client_id
+      if (response.user.client_id && response.user.client_id !== clientId) {
+        setClientId(response.user.client_id);
+      }
+      
       toast.success("Login successful!");
       navigate("/dashboard");
     } catch (error: any) {
@@ -101,6 +129,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const response = await authService.register({ name, email, password });
       setUser(response.user);
+      
+      // Update client theme if user has a specific client_id
+      if (response.user.client_id && response.user.client_id !== clientId) {
+        setClientId(response.user.client_id);
+      }
+      
       toast.success("Registration successful!");
       navigate("/dashboard");
     } catch (error: any) {
@@ -117,6 +151,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const updatedUser = await authService.updateProfile(userData);
       setUser(prev => prev ? { ...prev, ...updatedUser } : null);
+      
+      // Update client theme if client_id has changed
+      if (updatedUser.client_id && updatedUser.client_id !== clientId) {
+        setClientId(updatedUser.client_id);
+      }
+      
       toast.success("Profile updated successfully!");
     } catch (error: any) {
       console.error("Profile update error:", error);
@@ -124,6 +164,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       throw error;
     } finally {
       setLoading(false);
+    }
+  };
+  
+  // Helper function to check if user has required role
+  const hasPermission = (requiredRole: UserRole): boolean => {
+    if (!user) return false;
+    
+    const userRole = user.role || "user";
+    
+    switch (requiredRole) {
+      case "super_admin":
+        return userRole === "super_admin";
+      
+      case "client_admin":
+        // Super admins can do anything client admins can
+        return userRole === "super_admin" || userRole === "client_admin";
+      
+      case "user":
+        // Any authenticated user passes this check
+        return true;
+      
+      default:
+        return false;
     }
   };
 
@@ -138,6 +201,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         register,
         updateProfile,
         isAuthenticated: !!user,
+        hasPermission,
       }}
     >
       {children}

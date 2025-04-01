@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import os
 
-from app.api.routes import auth, workflows, history, chat
+from app.api.routes import auth, workflows, history, chat, clients
 from app.core.config import settings
 
 app = FastAPI(
@@ -28,6 +28,7 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(workflows.router, prefix="/api/workflows", tags=["Workflows"])
 app.include_router(history.router, prefix="/api/history", tags=["History"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
+app.include_router(clients.router, prefix="/api/clients", tags=["Clients"])
 
 @app.get("/")
 async def root():
