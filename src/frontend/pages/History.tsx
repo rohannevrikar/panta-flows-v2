@@ -69,7 +69,11 @@ const History = () => {
   };
 
   // Map HistoryItemStatus to the string type expected by HistoryItem component
-  const mapStatusToHistoryItemStatus = (status: HistoryItemStatus): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
+  const mapStatusToString = (status: HistoryItemStatus): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
+    if (typeof status === 'string') {
+      return status as any;
+    }
+    
     const statusValue = status.status;
     // Map "in_progress" to "processing" for compatibility with HistoryItem component
     return statusValue === "in_progress" ? "processing" : statusValue as any;
@@ -109,7 +113,7 @@ const History = () => {
                     id={item.id}
                     title={item.title}
                     timestamp={new Date(item.date)}
-                    status={mapStatusToHistoryItemStatus(item.status)}
+                    status={mapStatusToString(item.status)}
                     iconName={item.workflowType}
                     onClick={() => handleDelete(item.id)}
                   />
