@@ -58,7 +58,9 @@ const History = () => {
   const handleStatusChange = async (id: string, newStatus: HistoryItemStatus) => {
     try {
       await historyService.updateHistoryItem(id, { status: newStatus });
-      toast.success(`History item status changed to ${newStatus}.`);
+      // Extract the status string from the HistoryItemStatus object
+      const statusString = typeof newStatus === 'string' ? newStatus : newStatus.status;
+      toast.success(`History item status changed to ${statusString}.`);
       // Reload history after status change
       loadHistory();
     } catch (error) {
