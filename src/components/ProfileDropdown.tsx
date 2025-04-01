@@ -30,7 +30,7 @@ const ProfileDropdown = ({ name, email, avatarUrl }: ProfileDropdownProps) => {
       <DropdownMenuTrigger className="focus:outline-none">
         <Avatar className="cursor-pointer border-2 border-transparent hover:border-ai-purple-400 transition-all">
           {avatarUrl ? (
-            <AvatarImage src={avatarUrl} alt={name} />
+            <AvatarImage src={avatarUrl} alt={name} className="object-cover" />
           ) : (
             <AvatarFallback className="bg-ai-purple-100 text-ai-purple-600">
               {initials}
@@ -47,28 +47,28 @@ const ProfileDropdown = ({ name, email, avatarUrl }: ProfileDropdownProps) => {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
-          className="cursor-pointer"
+          className="cursor-pointer hover:bg-black hover:text-white"
           onClick={() => {
             console.log("Dashboard clicked");
-            // Force navigate to dashboard by using the direct path
             navigate('/dashboard');
-            // Force refresh the page to ensure proper rendering
-            window.location.reload();
           }}
         >
           <LayoutDashboard className="mr-2 h-4 w-4" />
           <span>Dashboard</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem 
+          className="cursor-pointer hover:bg-black hover:text-white"
+          onClick={() => navigate('/profile')}
+        >
           <User className="mr-2 h-4 w-4" />
           <span>Profile</span>
         </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer">
+        <DropdownMenuItem className="cursor-pointer hover:bg-black hover:text-white">
           <Settings className="mr-2 h-4 w-4" />
           <span>Settings</span>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-red-500">
+        <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-white hover:bg-black hover:text-white">
           <LogOut className="mr-2 h-4 w-4" />
           <span>Log out</span>
         </DropdownMenuItem>
