@@ -1,9 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { clientService } from '@/services/clientService';
-import { workflowService } from '@/services/workflowService';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useAuth } from '@/frontend/hooks/useAuth';
+import { clientService } from '@/frontend/services/clientService';
+import { workflowService } from '@/frontend/services/workflowService';
+import { useTheme } from '@/frontend/contexts/ThemeContext';
 
 const ClientWorkflowLoader: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
