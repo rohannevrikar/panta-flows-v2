@@ -6,14 +6,13 @@ import { Button } from '@/frontend/components/ui/button';
 import { Card } from '@/frontend/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/frontend/components/ui/tabs';
 import HistoryItem from '@/frontend/components/HistoryItem';
-import { HistoryItemStatus } from '@/services/types';
 
 // History item type
 interface HistoryItemType {
   id: string;
   title: string;
   date: Date | string;
-  status: HistoryItemStatus | string;
+  status: string;
   workflowType: string;
   content?: string;
 }
@@ -57,11 +56,10 @@ const History = () => {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: HistoryItemStatus) => {
+  const handleStatusChange = async (id: string, newStatus: string) => {
     try {
       await historyService.updateHistoryItem(id, { status: newStatus });
-      const statusString = typeof newStatus === 'string' ? newStatus : newStatus.status;
-      toast.success(`History item status changed to ${statusString}.`);
+      toast.success(`History item status changed to ${newStatus}.`);
       // Reload history after status change
       loadHistory();
     } catch (error) {
@@ -70,20 +68,9 @@ const History = () => {
     }
   };
 
-  // Function to convert HistoryItemStatus to the expected string format
-  const mapStatusToString = (status: HistoryItemStatus | string): "completed" | "failed" | "pending" | "processing" => {
-    // If status is already a string, use the helper function
-    if (typeof status === 'string') {
-      return convertStatusString(status);
-    }
-    
-    // If status is an object, access its status property
-    return convertStatusString(status.status);
-  };
-  
-  // Helper function to convert status strings
-  const convertStatusString = (statusStr: string): "completed" | "failed" | "pending" | "processing" => {
-    switch (statusStr) {
+  // Function to convert status to the expected string format
+  const mapStatusToString = (status: string): "completed" | "failed" | "pending" | "processing" => {
+    switch (status) {
       case "completed":
         return "completed";
       case "failed":
@@ -96,7 +83,7 @@ const History = () => {
         return "processing"; // Default fallback
     }
   };
-
+  
   const renderContent = () => {
     if (isLoading) {
       return (

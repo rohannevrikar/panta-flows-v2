@@ -6,14 +6,19 @@ import { Button } from '@/components/ui/button';
 type LanguageOption = {
   value: Language;
   flag: string;
+  name: string;
 };
 
 const languages: LanguageOption[] = [
-  { value: 'en', flag: '🇬🇧' },
-  { value: 'de', flag: '🇩🇪' },
+  { value: 'en', flag: '🇬🇧', name: 'English' },
+  { value: 'de', flag: '🇩🇪', name: 'Deutsch' },
 ];
 
-const LanguageSelector: React.FC = () => {
+interface LanguageSelectorProps {
+  variant?: 'ghost' | 'default';
+}
+
+const LanguageSelector: React.FC<LanguageSelectorProps> = ({ variant = 'ghost' }) => {
   const { language, setLanguage } = useLanguage();
   
   // Get the other language that is not currently active
@@ -23,11 +28,11 @@ const LanguageSelector: React.FC = () => {
 
   return (
     <Button 
-      variant="ghost" 
+      variant={variant}
       size="icon" 
       className="hover:bg-black/5"
       onClick={() => setLanguage(otherLanguage.value)}
-      aria-label={`Switch to ${otherLanguage.value}`}
+      aria-label={`Switch to ${otherLanguage.name}`}
     >
       <span className="text-lg">{otherLanguage.flag}</span>
     </Button>

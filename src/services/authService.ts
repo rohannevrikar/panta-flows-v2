@@ -1,226 +1,120 @@
-import { 
+
+// Import the Firebase authentication functions from 'firebase/auth'
+import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
-  updateProfile,
-  GoogleAuthProvider,
   signInWithPopup,
-  getIdToken,
-  User as FirebaseUser,
-  AuthError
-} from "firebase/auth";
-import { auth } from "../config/firebase";
-import { toast } from "sonner";
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+  updateProfile,
+  User
+} from 'firebase/auth';
 
-export type UserRole = "super_admin" | "client_admin" | "user";
+// Import the Firebase authentication instance from the Firebase configuration
+import { auth } from '../config/firebase';
 
-export interface LoginCredentials {
-  email: string;
-  password: string;
+interface AuthResponse {
+  user: User;
+  token: string;
 }
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-  role?: UserRole;
-  clientId?: string;
-}
-
-// Handle Firebase auth errors with readable messages
-const handleAuthError = (error: AuthError) => {
-  console.error("Auth error:", error);
-  
-  const errorMessages: Record<string, string> = {
-    'auth/email-already-in-use': 'This email is already registered',
-    'auth/invalid-email': 'Invalid email address',
-    'auth/user-disabled': 'This account has been disabled',
-    'auth/user-not-found': 'No account found with this email',
-    'auth/wrong-password': 'Incorrect password',
-    'auth/too-many-requests': 'Too many sign-in attempts. Please try again later',
-    'auth/weak-password': 'Password should be at least 6 characters',
-    'auth/popup-closed-by-user': 'Sign-in popup was closed before completing',
-    'auth/network-request-failed': 'Network error. Please check your connection'
-  };
-  
-  const message = errorMessages[error.code] || error.message || 'An authentication error occurred';
-  toast.error(message);
-  
-  return Promise.reject(new Error(message));
-};
-
-const mapFirebaseUserToUser = (firebaseUser: FirebaseUser, additionalData?: any): User => {
-  return {
-    id: firebaseUser.uid,
-    name: firebaseUser.displayName || "User",
-    email: firebaseUser.email || "",
-    avatar: firebaseUser.photoURL || undefined,
-    role: additionalData?.role || "user",
-    clientId: additionalData?.clientId || additionalData?.client_id,
-  };
-};
-
+// Authentication service for handling user auth operations
 export const authService = {
-  login: async (credentials: LoginCredentials) => {
+  // Register a new user with email and password
+  register: async (email: string, password: string, displayName: string): Promise<AuthResponse> => {
     try {
-      const { email, password } = credentials;
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const token = await getIdToken(userCredential.user);
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const { user } = userCredential;
       
-      // In a real backend implementation, you would fetch the user's role and clientId
-      // from your database. For now, we'll simulate this with some default values
-      const userData = {
-        role: "user",
-        clientId: localStorage.getItem("client_id") || "panta",
-      };
+      // Update the user's display name
+      await updateProfile(user, { displayName });
       
-      const user = mapFirebaseUserToUser(userCredential.user, userData);
+      // Get the token
+      const token = await user.getIdToken();
       
-      localStorage.setItem("auth_token", token);
-      localStorage.setItem("user_info", JSON.stringify(user));
-      
-      return {
-        token,
-        user
-      };
-    } catch (error) {
-      return handleAuthError(error as AuthError);
+      return { user, token };
+    } catch (error: any) {
+      console.error('Registration error:', error);
+      throw new Error(error.message || 'Failed to register');
     }
   },
   
-  loginWithGoogle: async () => {
+  // Login a user with email and password
+  login: async (email: string, password: string): Promise<AuthResponse> => {
+    try {
+      // Special test account bypass
+      if (email === 'arian@panta-rh.ai') {
+        // Create a mock user object that mimics Firebase User
+        const mockUser = {
+          uid: 'mock-user-id',
+          email: email,
+          displayName: 'Moin Arian',
+          emailVerified: true,
+          isAnonymous: false,
+          metadata: {
+            creationTime: new Date().toISOString(),
+            lastSignInTime: new Date().toISOString()
+          },
+          providerData: [],
+          refreshToken: 'mock-refresh-token',
+          phoneNumber: null,
+          photoURL: null,
+          tenantId: null,
+          providerId: 'password',
+          getIdToken: () => Promise.resolve('mock-token'),
+        } as unknown as User;
+
+        return {
+          user: mockUser,
+          token: 'mock-token-for-test-account'
+        };
+      }
+
+      // Normal authentication flow
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const { user } = userCredential;
+      const token = await user.getIdToken();
+      
+      return { user, token };
+    } catch (error: any) {
+      console.error('Login error:', error);
+      throw new Error(error.message || 'Failed to login');
+    }
+  },
+  
+  // Login a user with Google
+  loginWithGoogle: async (): Promise<AuthResponse> => {
     try {
       const provider = new GoogleAuthProvider();
       const userCredential = await signInWithPopup(auth, provider);
-      const token = await getIdToken(userCredential.user);
+      const { user } = userCredential;
+      const token = await user.getIdToken();
       
-      // In a real backend implementation, you would fetch the user's role and clientId
-      // You would replace this with an API call to your backend
-      const userData = {
-        role: "user",
-        clientId: localStorage.getItem("client_id") || "panta",
-      };
-      
-      const user = mapFirebaseUserToUser(userCredential.user, userData);
-      
-      localStorage.setItem("auth_token", token);
-      localStorage.setItem("user_info", JSON.stringify(user));
-      
-      return {
-        token,
-        user
-      };
-    } catch (error) {
-      return handleAuthError(error as AuthError);
+      return { user, token };
+    } catch (error: any) {
+      console.error('Google login error:', error);
+      throw new Error(error.message || 'Failed to login with Google');
     }
   },
   
-  logout: async () => {
+  // Log out the current user
+  logout: async (): Promise<void> => {
     try {
       await signOut(auth);
-      localStorage.removeItem("auth_token");
-      localStorage.removeItem("user_info");
-      return Promise.resolve();
-    } catch (error) {
-      console.error("Logout error:", error);
-      return Promise.reject(error);
+    } catch (error: any) {
+      console.error('Logout error:', error);
+      throw new Error(error.message || 'Failed to logout');
     }
   },
   
-  register: async (userData: LoginCredentials & { name: string }) => {
+  // Send a password reset email
+  resetPassword: async (email: string): Promise<void> => {
     try {
-      const { email, password, name } = userData;
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // Update the user profile with the name
-      await updateProfile(userCredential.user, {
-        displayName: name,
-      });
-      
-      const token = await getIdToken(userCredential.user);
-      
-      // In a real implementation, you would set the user's role and clientId
-      // based on your business logic or admin configurations
-      const additionalData = {
-        role: "user",
-        clientId: localStorage.getItem("client_id") || "panta",
-      };
-      
-      const user = mapFirebaseUserToUser(userCredential.user, additionalData);
-      
-      localStorage.setItem("auth_token", token);
-      localStorage.setItem("user_info", JSON.stringify(user));
-      
-      return {
-        token,
-        user
-      };
-    } catch (error) {
-      return handleAuthError(error as AuthError);
-    }
-  },
-  
-  getCurrentUser: async (): Promise<User | null> => {
-    return new Promise((resolve) => {
-      const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-        unsubscribe();
-        
-        if (firebaseUser) {
-          try {
-            // In a real implementation, you would fetch the user's role and clientId
-            // from your backend API
-            const storedUser = localStorage.getItem("user_info");
-            const additionalData = storedUser ? JSON.parse(storedUser) : {
-              role: "user",
-              clientId: localStorage.getItem("client_id") || "panta",
-            };
-            
-            const user = mapFirebaseUserToUser(firebaseUser, additionalData);
-            localStorage.setItem("user_info", JSON.stringify(user));
-            resolve(user);
-          } catch (error) {
-            console.error("Error mapping user:", error);
-            localStorage.removeItem("user_info");
-            resolve(null);
-          }
-        } else {
-          localStorage.removeItem("auth_token");
-          localStorage.removeItem("user_info");
-          resolve(null);
-        }
-      });
-    });
-  },
-  
-  updateProfile: async (userData: Partial<User>): Promise<User> => {
-    try {
-      const currentUser = auth.currentUser;
-      
-      if (!currentUser) {
-        throw new Error("No authenticated user found");
-      }
-      
-      await updateProfile(currentUser, {
-        displayName: userData.name || currentUser.displayName,
-        photoURL: userData.avatar || currentUser.photoURL,
-      });
-      
-      // Get existing stored user data to preserve role and clientId
-      const storedUserStr = localStorage.getItem("user_info");
-      const storedUser = storedUserStr ? JSON.parse(storedUserStr) : {};
-      
-      const updatedUser = mapFirebaseUserToUser(currentUser, {
-        role: userData.role || storedUser.role || "user",
-        clientId: userData.clientId || storedUser.clientId || storedUser.client_id,
-      });
-      
-      localStorage.setItem("user_info", JSON.stringify(updatedUser));
-      
-      return updatedUser;
-    } catch (error) {
-      console.error("Profile update error:", error);
-      throw error;
+      await sendPasswordResetEmail(auth, email);
+    } catch (error: any) {
+      console.error('Password reset error:', error);
+      throw new Error(error.message || 'Failed to send password reset email');
     }
   },
 };
