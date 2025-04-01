@@ -10,7 +10,7 @@ export interface HistoryItemProps {
   title: string;
   iconName?: string;
   timestamp: Date;
-  status: "completed" | "failed" | "pending" | "in_progress" | "processing";
+  status: "completed" | "failed" | "pending" | "processing";
   onClick?: (id: string) => void;
 }
 

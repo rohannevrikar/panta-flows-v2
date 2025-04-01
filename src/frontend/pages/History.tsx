@@ -121,7 +121,7 @@ const History = () => {
               id={item.id}
               title={item.title}
               timestamp={new Date(item.date)}
-              status={mapStatusToString(item.status)}
+              status={mapStatusToString(item.status) as "completed" | "failed" | "pending" | "processing"}
               iconName={item.workflowType}
               onClick={() => handleDelete(item.id)}
             />
