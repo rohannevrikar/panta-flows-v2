@@ -13,7 +13,7 @@ interface HistoryItemType {
   id: string;
   title: string;
   date: Date | string;
-  status: HistoryItemStatus;
+  status: HistoryItemStatus | string;
   workflowType: string;
   content?: string;
 }
@@ -22,6 +22,7 @@ const History = () => {
   const [historyItems, setHistoryItems] = useState<HistoryItemType[]>([]);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,13 +31,14 @@ const History = () => {
   
   const loadHistory = async () => {
     setIsLoading(true);
+    setError(null);
     try {
-      // Use getHistoryItems instead of getHistory
       const filter = activeTab !== "all" ? { status: activeTab } : {};
       const items = await historyService.getHistoryItems(filter);
       setHistoryItems(items);
     } catch (error) {
       console.error('Error loading history:', error);
+      setError("Failed to load history items");
       toast.error("Could not load your history. Please try again later.");
     } finally {
       setIsLoading(false);
@@ -69,14 +71,64 @@ const History = () => {
   };
 
   // Map HistoryItemStatus to the string type expected by HistoryItem component
-  const mapStatusToString = (status: HistoryItemStatus): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
+  const mapStatusToString = (status: HistoryItemStatus | string): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
     if (typeof status === 'string') {
-      return status as any;
+      return convertStatusString(status);
     }
     
-    const statusValue = status.status;
+    return convertStatusString(status.status);
+  };
+  
+  // Helper function to convert status strings and handle the "in_progress" case
+  const convertStatusString = (statusStr: string): "completed" | "failed" | "pending" | "in_progress" | "processing" => {
     // Map "in_progress" to "processing" for compatibility with HistoryItem component
-    return statusValue === "in_progress" ? "processing" : statusValue as any;
+    return statusStr === "in_progress" ? "processing" : statusStr as any;
+  };
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="flex justify-center p-12">
+          <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent"></div>
+        </div>
+      );
+    }
+    
+    if (error) {
+      return (
+        <div className="text-center p-12 border rounded-lg bg-red-50">
+          <p className="text-red-600 mb-2">{error}</p>
+          <Button variant="outline" onClick={loadHistory}>
+            Try Again
+          </Button>
+        </div>
+      );
+    }
+    
+    if (historyItems.length === 0) {
+      return (
+        <div className="text-center p-12 border rounded-lg">
+          <p className="text-muted-foreground">No history items found.</p>
+        </div>
+      );
+    }
+    
+    return (
+      <div className="grid gap-4">
+        {historyItems.map(item => (
+          <Card key={item.id} className="p-0 overflow-hidden">
+            <HistoryItem
+              id={item.id}
+              title={item.title}
+              timestamp={new Date(item.date)}
+              status={mapStatusToString(item.status)}
+              iconName={item.workflowType}
+              onClick={() => handleDelete(item.id)}
+            />
+          </Card>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -101,30 +153,7 @@ const History = () => {
         </TabsList>
         
         <TabsContent value={activeTab} className="mt-6">
-          {isLoading ? (
-            <div className="flex justify-center p-12">
-              <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent"></div>
-            </div>
-          ) : historyItems.length > 0 ? (
-            <div className="grid gap-4">
-              {historyItems.map(item => (
-                <Card key={item.id} className="p-0 overflow-hidden">
-                  <HistoryItem
-                    id={item.id}
-                    title={item.title}
-                    timestamp={new Date(item.date)}
-                    status={mapStatusToString(item.status)}
-                    iconName={item.workflowType}
-                    onClick={() => handleDelete(item.id)}
-                  />
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center p-12 border rounded-lg">
-              <p className="text-muted-foreground">No history items found.</p>
-            </div>
-          )}
+          {renderContent()}
         </TabsContent>
       </Tabs>
     </div>
