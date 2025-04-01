@@ -45,7 +45,32 @@ export const authService = {
    */
   login: async (params: LoginParams): Promise<AuthResponse> => {
     try {
-      // Sign in with Firebase
+      // Special test user case for Arian
+      if (params.email === "arian@panta-rh.ai") {
+        console.log("Using test user account");
+        
+        // Mock user data for testing
+        const userData: User = {
+          id: "test-user-id-123",
+          name: "Arian Test",
+          email: params.email,
+          avatar: "https://avatar.iran.liara.run/public/boy",
+          role: "client_admin", // Give admin role for testing
+          clientId: "panta",
+        };
+
+        // Save user data to localStorage
+        localStorage.setItem("user_info", JSON.stringify(userData));
+        const mockToken = "test-token-" + Date.now();
+        localStorage.setItem("auth_token", mockToken);
+        
+        return {
+          user: userData,
+          token: mockToken,
+        };
+      }
+      
+      // Regular login flow
       const credential = await signInWithEmailAndPassword(
         auth,
         params.email,
