@@ -58,7 +58,7 @@ const History = () => {
   const handleStatusChange = async (id: string, newStatus: HistoryItemStatus) => {
     try {
       await historyService.updateHistoryItem(id, { status: newStatus });
-      toast.success(`History item status changed to ${newStatus.status}.`);
+      toast.success(`History item status changed to ${newStatus}.`);
       // Reload history after status change
       loadHistory();
     } catch (error) {
@@ -101,7 +101,7 @@ const History = () => {
                     id={item.id}
                     title={item.title}
                     timestamp={new Date(item.date)}
-                    status={item.status}
+                    status={item.status.status}
                     iconName={item.workflowType}
                     onClick={() => handleDelete(item.id)}
                   />
