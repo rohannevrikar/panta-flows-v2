@@ -1,9 +1,0 @@
-
-# Azure Deployment Configuration
-name: panta-backend
-type: service
-env: prod
-service: app-service
-language: python
-repo: https://github.com/yourusername/your-repo-name
-runtime: python:3.9

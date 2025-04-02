@@ -38,19 +38,6 @@ const translations: Record<Language, Translations> = {
     'app.edit': 'Edit',
     'app.delete': 'Delete',
     
-    // Login page
-    'login.tagline': 'discover designInspiration',
-    'login.subtitle': 'Unleash your creativity with AI-powered workflows designed for modern teams',
-    'login.welcome': 'Welcome back!',
-    'login.loginAction': 'Log in',
-    'login.email': 'Email',
-    'login.password': 'Password',
-    'login.forgotPassword': 'Forgot password?',
-    'login.login': 'Login',
-    'login.loggingIn': 'Logging in...',
-    'login.or': 'or',
-    'login.loginWithGoogle': 'Sign in with Google',
-    
     // Dashboard
     'dashboard.workflows': 'Workflows',
     'dashboard.newWorkflow': 'New Workflow',
@@ -115,19 +102,6 @@ const translations: Record<Language, Translations> = {
     'app.cancel': 'Abbrechen',
     'app.edit': 'Bearbeiten',
     'app.delete': 'Löschen',
-    
-    // Login page
-    'login.tagline': 'entdecke designInspiration',
-    'login.subtitle': 'Entfalte deine Kreativität mit KI-gesteuerten Arbeitsabläufen für moderne Teams',
-    'login.welcome': 'Willkommen zurück!',
-    'login.loginAction': 'Log dich ein',
-    'login.email': 'E-Mail',
-    'login.password': 'Passwort',
-    'login.forgotPassword': 'Passwort vergessen?',
-    'login.login': 'Einloggen',
-    'login.loggingIn': 'Anmeldung läuft...',
-    'login.or': 'oder',
-    'login.loginWithGoogle': 'Mit Google anmelden',
     
     // Dashboard
     'dashboard.workflows': 'Arbeitsabläufe',
