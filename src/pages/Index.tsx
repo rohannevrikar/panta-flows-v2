@@ -35,6 +35,8 @@ interface Workflow {
   icon: LucideIcon;
   color?: string;
   translationKey?: string;
+  systemPrompt?: string;
+  conversationStarters?: { id: string; text: string }[];
 }
 
 const workflows: Workflow[] = [
@@ -183,7 +185,12 @@ const Index = () => {
       title: workflowData.title,
       description: workflowData.description,
       icon: iconComponent,
-      color: workflowData.iconColor
+      color: workflowData.iconColor,
+      systemPrompt: workflowData.systemPrompt,
+      conversationStarters: workflowData.starters.map((text: string, index: number) => ({
+        id: `starter-${index}`,
+        text
+      }))
     };
 
     setAvailableWorkflows(prev => [...prev, newWorkflow]);
@@ -206,6 +213,8 @@ const Index = () => {
           onClose={handleCloseChat} 
           workflowTitle={currentWorkflow?.title} 
           userName="Moin Arian"
+          systemPrompt={currentWorkflow?.systemPrompt}
+          conversationStarters={currentWorkflow?.conversationStarters}
         />
       ) : (
         <>

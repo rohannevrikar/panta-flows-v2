@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, X, Feather } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,12 +6,14 @@ import { useNavigate } from "react-router-dom";
 import Logo from "./Logo";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchChat from "./SearchChat";
+import { useAzureChat } from "@/hooks/use-azure-chat";
+import { useChatHistory } from "@/hooks/use-chat-history";
+import { ChatMessage as AzureChatMessage } from "@/lib/azure-openai";
 
-interface Message {
+interface UIMessage extends AzureChatMessage {
   id: string;
-  sender: "user" | "bot";
-  content: string;
   timestamp: Date;
+  sender: "user" | "bot";
 }
 
 interface ConversationStarter {
@@ -23,26 +24,81 @@ interface ConversationStarter {
 interface ChatInterfaceProps {
   onClose?: () => void;
   workflowTitle?: string;
+  workflowId?: string;
   userName?: string;
+  userId?: string;
+  sessionId?: string;
   conversationStarters?: ConversationStarter[];
+  systemPrompt?: string;
 }
 
 const ChatInterface = ({ 
   onClose, 
   workflowTitle = "Chat Assistant",
+  workflowId = "default-workflow",
   userName = "Moin Arian",
-  conversationStarters = [
+  userId = "default-user",
+  sessionId,
+  conversationStarters = [],
+  systemPrompt
+}: ChatInterfaceProps) => {
+  // Default conversation starters if none are provided
+  const defaultStarters = [
     { id: "1", text: "Generate a marketing strategy for my business" },
     { id: "2", text: "Help me draft an email to a client" },
     { id: "3", text: "Summarize this article for me" },
     { id: "4", text: "Create a to-do list for my project" }
-  ]
-}: ChatInterfaceProps) => {
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState<Message[]>([]);
+  ];
   
+  // Use provided conversation starters or fall back to defaults
+  const effectiveStarters = conversationStarters.length > 0 
+    ? conversationStarters 
+    : defaultStarters;
+  
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [showStarters, setShowStarters] = useState(true);
+  
+  // Initialize chat history
+  const { 
+    currentSession, 
+    isLoading: historyLoading, 
+    error: historyError,
+    createSession,
+    addMessage
+  } = useChatHistory({
+    userId,
+    workflowId,
+    workflowTitle,
+    sessionId
+  });
+  
+  // Create a new session if none exists
+  useEffect(() => {
+    if (!currentSession && !sessionId) {
+      createSession();
+    }
+  }, [currentSession, sessionId, createSession]);
+  
+  // Azure OpenAI chat hook
+  const { 
+    messages: azureMessages, 
+    isLoading: azureLoading, 
+    error: azureError, 
+    sendMessage 
+  } = useAzureChat({
+    systemPrompt,
+    temperature: 0.7,
+    maxTokens: 800
+  });
+
+  // Convert Azure messages to UI messages
+  const uiMessages: UIMessage[] = azureMessages.map(msg => ({
+    ...msg,
+    id: `${msg.role}-${Date.now()}`,
+    timestamp: new Date(),
+    sender: msg.role === 'user' ? 'user' : 'bot'
+  }));
 
   const handleClose = () => {
     if (onClose) {
@@ -52,56 +108,63 @@ const ChatInterface = ({
     }
   };
   
-  const handleStarterClick = (text: string) => {
+  const handleStarterClick = async (text: string) => {
     setInput(text);
     setShowStarters(false);
-    // In a real application, we would also send the message to the backend
-    const newMessage: Message = {
-      id: `user-${Date.now()}`,
-      sender: "user",
-      content: text,
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, newMessage]);
-    
-    // Simulate bot response
-    setTimeout(() => {
-      const botReply: Message = {
-        id: `bot-${Date.now()}`,
-        sender: "bot",
-        content: "I'm processing your request. Here's what I can help you with...",
-        timestamp: new Date(),
-      };
+    try {
+      // Send message to Azure OpenAI
+      const response = await sendMessage(text);
       
-      setMessages(prev => [...prev, botReply]);
-    }, 1000);
+      // Save user message to history
+      if (currentSession) {
+        await addMessage({
+          role: 'user',
+          content: text,
+          timestamp: new Date()
+        });
+        
+        // Save assistant response to history
+        if (response) {
+          await addMessage({
+            role: 'assistant',
+            content: response.content,
+            timestamp: new Date()
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
-  const handleSubmit = (text: string, files: File[]) => {
+  const handleSubmit = async (text: string, files: File[]) => {
     setShowStarters(false);
-    
-    const newMessage: Message = {
-      id: `user-${Date.now()}`,
-      sender: "user",
-      content: text,
-      timestamp: new Date(),
-    };
-    
-    setMessages(prev => [...prev, newMessage]);
-    setInput("");
-    
-    // Simulate bot response
-    setTimeout(() => {
-      const botReply: Message = {
-        id: `bot-${Date.now()}`,
-        sender: "bot",
-        content: "I'm processing your request. Here's what I can help you with based on your message: " + text,
-        timestamp: new Date(),
-      };
+    try {
+      // Send message to Azure OpenAI
+      const response = await sendMessage(text);
       
-      setMessages(prev => [...prev, botReply]);
-    }, 1000);
+      // Save user message to history
+      if (currentSession) {
+        await addMessage({
+          role: 'user',
+          content: text,
+          timestamp: new Date()
+        });
+        
+        // Save assistant response to history
+        if (response) {
+          await addMessage({
+            role: 'assistant',
+            content: response.content,
+            timestamp: new Date()
+          });
+        }
+      }
+      
+      setInput("");
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   return (
@@ -130,11 +193,11 @@ const ChatInterface = ({
         <div className="flex-1 flex flex-col relative">
           <ScrollArea className="flex-1 p-4 pt-6">
             <div className="max-w-3xl mx-auto space-y-4">
-              {showStarters && messages.length === 0 && (
+              {showStarters && uiMessages.length === 0 && (
                 <div className="mb-8 flex flex-col items-center justify-center pt-12">
                   <h2 className="text-2xl font-semibold mb-6 text-center">{workflowTitle}</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
-                    {conversationStarters.map((starter) => (
+                    {effectiveStarters.map((starter) => (
                       <Button
                         key={starter.id}
                         variant="outline"
@@ -148,7 +211,7 @@ const ChatInterface = ({
                 </div>
               )}
 
-              {messages.map((message) => (
+              {uiMessages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${
