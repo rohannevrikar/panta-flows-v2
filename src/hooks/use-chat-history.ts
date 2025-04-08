@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { cosmosService, ChatSession, ChatMessage } from '@/lib/cosmos-service';
+import { apiService, ChatSession, ChatMessage } from '@/lib/api-service';
 
 interface UseChatHistoryOptions {
   userId: string;
@@ -24,7 +24,7 @@ export function useChatHistory({
     try {
       setIsLoading(true);
       setError(null);
-      const history = await cosmosService.getChatHistory(userId);
+      const history = await apiService.getChatHistory(userId);
       setSessions(history);
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to load chat history'));
@@ -39,7 +39,7 @@ export function useChatHistory({
     try {
       setIsLoading(true);
       setError(null);
-      const session = await cosmosService.getChatSession(id, userId);
+      const session = await apiService.getSession(id, userId);
       setCurrentSession(session);
       return session;
     } catch (err) {
@@ -60,7 +60,12 @@ export function useChatHistory({
     try {
       setIsLoading(true);
       setError(null);
-      const session = await cosmosService.createChatSession(workflowId, workflowTitle, userId);
+      const session = await apiService.createSession({
+        workflowId,
+        workflowTitle,
+        userId,
+        messages: []
+      });
       setCurrentSession(session);
       return session;
     } catch (err) {
@@ -73,7 +78,7 @@ export function useChatHistory({
   }, [userId, workflowId, workflowTitle]);
 
   // Add message to session
-  const addMessage = useCallback(async (message: Omit<ChatMessage, 'id' | 'workflowId' | 'workflowTitle' | 'userId'>) => {
+  const addMessage = useCallback(async (message: Omit<ChatMessage, 'id'>) => {
     if (!currentSession) {
       throw new Error('No active session');
     }
@@ -81,41 +86,28 @@ export function useChatHistory({
     try {
       setIsLoading(true);
       setError(null);
-      
-      const fullMessage: Omit<ChatMessage, 'id'> = {
-        ...message,
-        workflowId: currentSession.workflowId,
-        workflowTitle: currentSession.workflowTitle,
-        userId
-      };
-      
-      const savedMessage = await cosmosService.addMessageToSession(
-        currentSession.id,
-        userId,
-        fullMessage
-      );
+      const savedMessage = await apiService.addMessage(currentSession.id, userId, message);
       
       // Update current session with new message
       setCurrentSession(prev => {
         if (!prev) return null;
         return {
           ...prev,
-          messages: [...prev.messages, savedMessage],
-          updatedAt: new Date()
+          messages: [...prev.messages, savedMessage]
         };
       });
-      
+
       return savedMessage;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to add message'));
       console.error('Error adding message:', err);
-      return null;
+      throw err;
     } finally {
       setIsLoading(false);
     }
   }, [currentSession, userId]);
 
-  // Initialize
+  // Load initial data
   useEffect(() => {
     loadChatHistory();
   }, [loadChatHistory]);

@@ -1,0 +1,11 @@
+fastapi==0.109.2
+uvicorn==0.27.1
+python-dotenv==1.0.1
+azure-cosmos==4.5.1
+openai
+python-multipart==0.0.9
+pydantic==2.6.1
+azure-storage-blob==12.19.0
+duckduckgo-search==4.4.3
+aiohttp==3.9.3  # Added for async HTTP requests
+beautifulsoup4

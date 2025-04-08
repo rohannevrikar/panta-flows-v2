@@ -8,11 +8,15 @@ import ProfileDropdown from "./ProfileDropdown";
 import SearchChat from "./SearchChat";
 import { useAzureChat } from "@/hooks/use-azure-chat";
 import { useChatHistory } from "@/hooks/use-chat-history";
-import { ChatMessage as AzureChatMessage } from "@/lib/azure-openai";
+import { useFiles } from "@/hooks/use-files";
+import { ChatMessage } from "@/lib/api-service";
+import { useWebSearch } from '@/hooks/use-web-search';
+import { apiService } from "@/lib/api-service";
 
-interface UIMessage extends AzureChatMessage {
+interface UIMessage extends ChatMessage {
   id: string;
-  timestamp: Date;
+  timestamp: string;
+  isError?: boolean;
   sender: "user" | "bot";
 }
 
@@ -30,6 +34,23 @@ interface ChatInterfaceProps {
   sessionId?: string;
   conversationStarters?: ConversationStarter[];
   systemPrompt?: string;
+}
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+  files?: {
+    id: string;
+    content_type: string;
+    size: number;
+  }[];
+  file_references?: string[];
+}
+
+interface FileInfo {
+  name: string;
+  type: string;
+  size: number;
 }
 
 const ChatInterface = ({ 
@@ -58,6 +79,8 @@ const ChatInterface = ({
   const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [showStarters, setShowStarters] = useState(true);
+  const [files, setFiles] = useState<File[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   
   // Initialize chat history
   const { 
@@ -80,25 +103,45 @@ const ChatInterface = ({
     }
   }, [currentSession, sessionId, createSession]);
   
-  // Azure OpenAI chat hook
+  // Azure OpenAI chat hook with web search enabled
   const { 
     messages: azureMessages, 
     isLoading: azureLoading, 
     error: azureError, 
     sendMessage 
   } = useAzureChat({
-    systemPrompt,
+    systemPrompt: systemPrompt || "You are a helpful AI assistant with access to web search and file search capabilities. IMPORTANT: When files are provided in the request, you MUST use the file_search tool to search through those files before responding. After searching through files, analyze the results thoroughly and provide a comprehensive summary of the information found. Extract and present the most relevant facts, figures, and details from the files. Use web search when you need current information or need to verify facts that aren't in the provided files.",
     temperature: 0.7,
     maxTokens: 800
   });
 
   // Convert Azure messages to UI messages
-  const uiMessages: UIMessage[] = azureMessages.map(msg => ({
+  const uiMessages: UIMessage[] = azureMessages.map((msg, index) => ({
     ...msg,
-    id: `${msg.role}-${Date.now()}`,
-    timestamp: new Date(),
+    id: `${msg.role}-${Date.now()}-${index}`,
+    timestamp: new Date().toISOString(),
     sender: msg.role === 'user' ? 'user' : 'bot'
   }));
+
+  // Initialize file search
+  const { 
+    searchFiles,
+    searchResults,
+    isLoading: fileSearchLoading,
+    error: fileSearchError,
+    uploadFile
+  } = useFiles();
+
+  // Initialize web search
+  const { 
+    search: webSearch,
+    results: webSearchResults,
+    isLoading: webSearchLoading,
+    error: webSearchError
+  } = useWebSearch({
+    maxResults: 5,
+    refineResults: true
+  });
 
   const handleClose = () => {
     if (onClose) {
@@ -119,16 +162,14 @@ const ChatInterface = ({
       if (currentSession) {
         await addMessage({
           role: 'user',
-          content: text,
-          timestamp: new Date()
+          content: text
         });
         
         // Save assistant response to history
         if (response) {
           await addMessage({
             role: 'assistant',
-            content: response.content,
-            timestamp: new Date()
+            content: response.content
           });
         }
       }
@@ -138,32 +179,77 @@ const ChatInterface = ({
   };
 
   const handleSubmit = async (text: string, files: File[]) => {
-    setShowStarters(false);
+    if (!text.trim() || azureLoading) return;
+
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 9);
+    
+    // Add user message to UI
+    const userMessage: UIMessage = {
+      id: `user-${timestamp}-${randomString}`,
+      role: 'user',
+      content: text,
+      timestamp: new Date().toISOString(),
+      sender: 'user',
+      files: files.map(file => ({
+        id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        content_type: file.type,
+        size: file.size
+      }))
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInput('');
+    setFiles([]);
+
     try {
-      // Send message to Azure OpenAI
-      const response = await sendMessage(text);
-      
-      // Save user message to history
-      if (currentSession) {
-        await addMessage({
-          role: 'user',
-          content: text,
-          timestamp: new Date()
-        });
-        
-        // Save assistant response to history
-        if (response) {
-          await addMessage({
-            role: 'assistant',
-            content: response.content,
-            timestamp: new Date()
-          });
-        }
+      console.log("Uploading files");
+      console.log(files);
+      // Upload files if any
+      const uploadedFileInfos = await Promise.all(
+        files.map(file => apiService.uploadFile(file))
+      );
+
+      // Create a message that includes information about the uploaded files
+      let messageContent = text;
+      if (uploadedFileInfos.length > 0) {
+        const fileIds = uploadedFileInfos.map(fileInfo => fileInfo.id).join(', ');
+        messageContent = `I have uploaded the following files: ${fileIds}. Please search through them to answer my question: ${text}`;
       }
-      
-      setInput("");
+
+      // Get all previous messages from the conversation
+      const previousMessages = azureMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      // Send message with file references and conversation history
+      const response = await apiService.createChatCompletion({
+        messages: [
+          ...previousMessages,
+          {
+            role: 'user',
+            content: messageContent
+          }
+        ],
+        file_ids: uploadedFileInfos.map(fileInfo => fileInfo.id)
+      });
+
+      // Add assistant's response to messages
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${timestamp}-${randomString}`,
+        ...response.choices[0].message
+      };
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
+      // Add error message to chat
+      const errorMessage: ChatMessage = {
+        id: `error-${timestamp}-${randomString}`,
+        role: 'assistant',
+        content: 'Sorry, there was an error processing your message. Please try again.',
+        file_references: []
+      };
+      setMessages(prev => [...prev, errorMessage]);
     }
   };
 
@@ -211,26 +297,26 @@ const ChatInterface = ({
                 </div>
               )}
 
-              {uiMessages.map((message) => (
+              {messages.map((message) => (
                 <div
                   key={message.id}
                   className={`flex ${
-                    message.sender === "user" ? "justify-end" : "justify-start"
+                    message.role === "user" ? "justify-end" : "justify-start"
                   }`}
                 >
                   <div
                     className={`flex gap-3 max-w-[80%] ${
-                      message.sender === "user" ? "flex-row-reverse" : ""
+                      message.role === "user" ? "flex-row-reverse" : ""
                     }`}
                   >
                     <div
                       className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        message.sender === "user"
+                        message.role === "user"
                           ? "bg-panta-blue"
                           : "bg-gray-100"
                       }`}
                     >
-                      {message.sender === "user" ? (
+                      {message.role === "user" ? (
                         <User className="h-5 w-5 text-white" />
                       ) : (
                         <Feather className="h-5 w-5 text-panta-blue" />
@@ -238,20 +324,18 @@ const ChatInterface = ({
                     </div>
                     <div
                       className={`rounded-lg p-4 ${
-                        message.sender === "user"
+                        message.role === "user"
                           ? "bg-panta-blue text-white"
                           : "bg-gray-100 text-gray-800"
                       }`}
                     >
                       <p>{message.content}</p>
                       <div
-                        className={`text-xs mt-2 ${
-                          message.sender === "user"
-                            ? "text-white/70"
-                            : "text-gray-500"
+                        className={`text-xs text-gray-500 ${
+                          message.role === "user" ? "text-right" : "text-left"
                         }`}
                       >
-                        {message.timestamp.toLocaleTimeString([], {
+                        {new Date(message.timestamp).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}

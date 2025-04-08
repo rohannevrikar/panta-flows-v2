@@ -7,7 +7,7 @@
     "skipLibCheck": true,
 
     /* Bundler mode */
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "moduleDetection": "force",
@@ -21,10 +21,14 @@
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false,
 
+    /* Paths */
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    
+    /* Types */
+    "typeRoots": ["./node_modules/@types"]
   },
   "include": ["src"]
 }

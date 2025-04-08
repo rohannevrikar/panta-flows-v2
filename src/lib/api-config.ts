@@ -1,11 +1,20 @@
-export const AZURE_CONFIG = {
-  endpoint: import.meta.env.VITE_AZURE_ENDPOINT || '',
-  apiKey: import.meta.env.VITE_AZURE_API_KEY || '',
-  deploymentName: import.meta.env.VITE_AZURE_DEPLOYMENT_NAME || '',
-  apiVersion: '2024-02-15-preview'
+export const API_CONFIG = {
+  baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000',
+  endpoints: {
+    chat: '/api/chat/completions',
+    sessions: '/api/cosmos/sessions',
+    session: (sessionId: string, userId: string) => `/api/cosmos/sessions/${sessionId}/${userId}`,
+    messages: (sessionId: string, userId: string) => `/api/cosmos/sessions/${sessionId}/${userId}/messages`,
+    files: {
+      upload: '/api/files/upload',
+      list: '/api/files/list',
+      search: '/api/files/search',
+      delete: (fileId: string) => `/api/files/${fileId}`
+    },
+    webSearch: '/api/web-search/search'
+  }
 };
 
-export const AZURE_HEADERS = {
-  'api-key': AZURE_CONFIG.apiKey,
+export const API_HEADERS = {
   'Content-Type': 'application/json',
 }; 

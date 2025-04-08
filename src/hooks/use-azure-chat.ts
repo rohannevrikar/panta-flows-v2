@@ -1,10 +1,11 @@
 import { useState, useCallback } from 'react';
-import { AzureOpenAIService, ChatMessage, ChatCompletionRequest } from '@/lib/azure-openai';
+import { apiService, ChatMessage, ChatCompletionRequest } from '@/lib/api-service';
 
 interface UseAzureChatOptions {
   systemPrompt?: string;
   temperature?: number;
   maxTokens?: number;
+  useWebSearch?: boolean;
 }
 
 export function useAzureChat(options: UseAzureChatOptions = {}) {
@@ -33,11 +34,11 @@ export function useAzureChat(options: UseAzureChatOptions = {}) {
         messages: apiMessages,
         temperature: options.temperature ?? 0.7,
         max_tokens: options.maxTokens ?? 800,
+        use_web_search: options.useWebSearch ?? false
       };
 
-      // Get response from Azure OpenAI
-      const azureService = AzureOpenAIService.getInstance();
-      const response = await azureService.createChatCompletion(request);
+      // Get response from API
+      const response = await apiService.createChatCompletion(request);
 
       // Add assistant's response to the conversation
       const assistantMessage = response.choices[0].message;
@@ -51,7 +52,7 @@ export function useAzureChat(options: UseAzureChatOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [messages, options.systemPrompt, options.temperature, options.maxTokens]);
+  }, [messages, options.systemPrompt, options.temperature, options.maxTokens, options.useWebSearch]);
 
   const clearMessages = useCallback(() => {
     setMessages([]);

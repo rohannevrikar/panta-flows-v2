@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Search, Send, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +21,7 @@ const SearchChat = ({
 }: SearchChatProps) => {
   const [query, setQuery] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -31,14 +31,19 @@ const SearchChat = ({
     }
   }, [autoFocus]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if ((!query.trim() && !value?.trim()) && files.length === 0) return;
     
     const currentText = value || query;
     
     if (onSubmit) {
-      onSubmit(currentText, files);
+      setUploading(true);
+      try {
+        await onSubmit(currentText, files);
+      } finally {
+        setUploading(false);
+      }
     } else {
       console.log("Search or chat:", currentText, "Files:", files);
     }
@@ -81,13 +86,14 @@ const SearchChat = ({
         <div className="flex flex-wrap gap-2 mb-2">
           {files.map((file, index) => (
             <div key={index} className="flex items-center bg-gray-100 rounded-full px-3 py-1.5 text-sm">
-              <span className="truncate max-w-[150px]">{file.name}</span>
+              <span className="truncate max-w-[150px]">File {index + 1}</span>
               <Button 
                 type="button" 
                 variant="ghost" 
                 size="sm" 
                 className="h-5 w-5 p-0 ml-1 hover:bg-black hover:text-white" 
                 onClick={() => removeFile(index)}
+                disabled={uploading}
               >
                 <X className="h-3 w-3" />
               </Button>
@@ -102,11 +108,12 @@ const SearchChat = ({
         <input
           ref={inputRef}
           type="text"
-          placeholder="Search or start a conversation..."
+          placeholder={uploading ? "Uploading files..." : "Search or start a conversation..."}
           value={value !== undefined ? value : query}
           onChange={handleQueryChange}
           onFocus={handleFocus}
           className="ai-chat-input pl-10 pr-24"
+          disabled={uploading}
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1">
           <Button
@@ -115,6 +122,7 @@ const SearchChat = ({
             variant="ghost"
             className="h-8 w-8 hover:bg-black hover:text-white"
             onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
           >
             <Paperclip className="h-4 w-4" />
             <input
@@ -123,15 +131,20 @@ const SearchChat = ({
               multiple
               className="hidden"
               onChange={handleFileChange}
+              disabled={uploading}
             />
           </Button>
           <Button 
             type="submit" 
             size="icon"
             className="h-8 w-8 bg-panta-blue hover:bg-black hover:text-white"
-            disabled={!(value || query).trim() && files.length === 0}
+            disabled={uploading || (!(value || query).trim() && files.length === 0)}
           >
-            <Send className="h-4 w-4" />
+            {uploading ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>
