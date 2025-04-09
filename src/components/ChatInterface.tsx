@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, X, Feather } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import Logo from "./Logo";
 import ProfileDropdown from "./ProfileDropdown";
 import SearchChat from "./SearchChat";
@@ -53,16 +53,43 @@ interface FileInfo {
   size: number;
 }
 
+interface SearchChatProps {
+  autoFocus?: boolean;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSubmit: (text: string, files: File[]) => void;
+  disableNavigation?: boolean;
+}
+
 const ChatInterface = ({ 
   onClose, 
   workflowTitle = "Chat Assistant",
   workflowId = "default-workflow",
   userName = "Moin Arian",
   userId = "default-user",
-  sessionId,
+  sessionId: propSessionId,
   conversationStarters = [],
   systemPrompt
 }: ChatInterfaceProps) => {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlSessionId = searchParams.get('sessionId');
+  const urlWorkflowId = searchParams.get('workflowId');
+  const urlQuery = searchParams.get('query');
+  
+  // Use session ID from props or URL
+  const effectiveSessionId = propSessionId || urlSessionId;
+  
+  // Use workflow ID from props or URL
+  const effectiveWorkflowId = workflowId || urlWorkflowId || "default-workflow";
+  
+  // Set initial input text if query is provided
+  useEffect(() => {
+    if (urlQuery) {
+      setInputText(urlQuery);
+    }
+  }, [urlQuery]);
+  
   // Default conversation starters if none are provided
   const defaultStarters = [
     { id: "1", text: "Generate a marketing strategy for my business" },
@@ -76,32 +103,59 @@ const ChatInterface = ({
     ? conversationStarters 
     : defaultStarters;
   
-  const navigate = useNavigate();
-  const [input, setInput] = useState("");
+  const [inputText, setInputText] = useState('');
   const [showStarters, setShowStarters] = useState(true);
-  const [files, setFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
   
   // Initialize chat history
   const { 
     currentSession, 
+    sessions,
     isLoading: historyLoading, 
     error: historyError,
     createSession,
-    addMessage
+    addMessage,
+    loadSession
   } = useChatHistory({
     userId,
-    workflowId,
+    workflowId: effectiveWorkflowId,
     workflowTitle,
-    sessionId
+    sessionId: effectiveSessionId
   });
-  
-  // Create a new session if none exists
+
+  // Create a new session if none exists and update URL
   useEffect(() => {
-    if (!currentSession && !sessionId) {
-      createSession();
+    const initializeSession = async () => {
+      if (!currentSession) {
+        // Always create a new session if no sessionId is provided
+        const newSession = await createSession();
+        if (newSession) {
+          // Update URL with session ID if not already in a session
+          if (!effectiveSessionId) {
+            navigate(`/chat?sessionId=${newSession.id}`, { replace: true });
+          }
+        }
+      }
+    };
+    initializeSession();
+  }, [currentSession, effectiveSessionId, createSession, setSearchParams, navigate]);
+
+  // Load messages from current session
+  useEffect(() => {
+    if (currentSession) {
+      setMessages(currentSession.messages);
     }
-  }, [currentSession, sessionId, createSession]);
+  }, [currentSession]);
+  
+  // Load specific session if sessionId is provided
+  useEffect(() => {
+    if (effectiveSessionId) {
+      loadSession(effectiveSessionId);
+    }
+  }, [effectiveSessionId, loadSession]);
   
   // Azure OpenAI chat hook with web search enabled
   const { 
@@ -144,15 +198,12 @@ const ChatInterface = ({
   });
 
   const handleClose = () => {
-    if (onClose) {
-      onClose();
-    } else {
-      navigate("/dashboard");
-    }
+    // Navigate back to the dashboard and replace the current history entry
+    navigate('/dashboard', { replace: true });
   };
   
   const handleStarterClick = async (text: string) => {
-    setInput(text);
+    setInputText(text);
     setShowStarters(false);
     try {
       // Send message to Azure OpenAI
@@ -179,77 +230,65 @@ const ChatInterface = ({
   };
 
   const handleSubmit = async (text: string, files: File[]) => {
-    if (!text.trim() || azureLoading) return;
-
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2, 9);
-    
-    // Add user message to UI
-    const userMessage: UIMessage = {
-      id: `user-${timestamp}-${randomString}`,
-      role: 'user',
-      content: text,
-      timestamp: new Date().toISOString(),
-      sender: 'user',
-      files: files.map(file => ({
-        id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-        content_type: file.type,
-        size: file.size
-      }))
-    };
-    setMessages(prev => [...prev, userMessage]);
-    setInput('');
-    setFiles([]);
-
+    if (!text.trim() && files.length === 0) return;
+  
     try {
-      console.log("Uploading files");
-      console.log(files);
-      // Upload files if any
-      const uploadedFileInfos = await Promise.all(
-        files.map(file => apiService.uploadFile(file))
-      );
-
-      // Create a message that includes information about the uploaded files
-      let messageContent = text;
-      if (uploadedFileInfos.length > 0) {
-        const fileIds = uploadedFileInfos.map(fileInfo => fileInfo.id).join(', ');
-        messageContent = `I have uploaded the following files: ${fileIds}. Please search through them to answer my question: ${text}`;
-      }
-
-      // Get all previous messages from the conversation
-      const previousMessages = azureMessages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-
-      // Send message with file references and conversation history
-      const response = await apiService.createChatCompletion({
-        messages: [
-          ...previousMessages,
-          {
-            role: 'user',
-            content: messageContent
-          }
-        ],
-        file_ids: uploadedFileInfos.map(fileInfo => fileInfo.id)
+      setIsLoading(true);
+      setError(null);
+  
+      // Create user message with uploaded files
+      const userMessage: ChatMessage = {
+        role: 'user',
+        content: text,
+        files: files.map(file => ({
+          id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          name: file.name,
+          content_type: file.type,
+          size: file.size
+        }))
+      };
+  
+      // Upload files and get their IDs
+      const fileUploadPromises = files.map(async (file) => {
+        const response = await apiService.uploadFile(file);
+        return response.id;
       });
-
-      // Add assistant's response to messages
-      const assistantMessage: ChatMessage = {
-        id: `assistant-${timestamp}-${randomString}`,
-        ...response.choices[0].message
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-    } catch (error) {
-      console.error('Error sending message:', error);
-      // Add error message to chat
-      const errorMessage: ChatMessage = {
-        id: `error-${timestamp}-${randomString}`,
-        role: 'assistant',
-        content: 'Sorry, there was an error processing your message. Please try again.',
-        file_references: []
-      };
-      setMessages(prev => [...prev, errorMessage]);
+  
+      const uploadedFileIds = await Promise.all(fileUploadPromises);
+      console.log("Uploaded file IDs:", uploadedFileIds);
+  
+      // Send message with file IDs
+      const message = text + (files.length > 0 ? `\n\nI've uploaded ${files.length} file(s).` : '');
+      const response = await sendMessage(message, uploadedFileIds);
+  
+      // Save user message to history
+      if (currentSession) {
+        await addMessage({
+          role: 'user',
+          content: text,
+          files: userMessage.files
+        });
+        
+        // Save assistant response to history
+        if (response) {
+          await addMessage({
+            role: 'assistant',
+            content: response.content
+          });
+        }
+      }
+  
+      // Add messages to chat UI
+      setMessages(prev => [...prev, userMessage, response]);
+  
+      // Clear input and uploaded files
+      setInputText('');
+      setUploadedFiles([]);
+    } catch (err) {
+      console.error('Error sending message:', err);
+      setError(err instanceof Error ? err : new Error('Failed to send message'));
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -350,8 +389,8 @@ const ChatInterface = ({
           <div className="border-t p-4 bg-white">
             <SearchChat 
               autoFocus={true} 
-              value={input} 
-              onChange={(e) => setInput(e.target.value)} 
+              value={inputText} 
+              onChange={(e) => setInputText(e.target.value)} 
               onSubmit={handleSubmit}
               disableNavigation={true}
             />

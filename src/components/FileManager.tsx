@@ -96,7 +96,7 @@ export function FileManager() {
               </svg>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-900">{file.name}</h3>
+              <h3 className="text-sm font-medium text-gray-900">{file.id}</h3>
               <p className="text-sm text-gray-500">
                 {formatFileSize(file.size)} • {file.content_type}
               </p>
@@ -138,20 +138,22 @@ export function FileManager() {
           Clear Results
         </button>
       </div>
-      {results.map((result) => (
+      {results.map((result, index) => (
         <div
-          key={`${result.file_id}-${result.relevance_score}`}
+          key={`search-result-${index}`}
           className="p-4 bg-white rounded-lg shadow"
         >
           <div className="flex justify-between items-start mb-2">
             <h3 className="text-sm font-medium text-gray-900">
-              {result.file_name}
+              Search Result
             </h3>
-            <span className="text-xs text-gray-500">
-              Score: {result.relevance_score.toFixed(2)}
-            </span>
           </div>
           <p className="text-sm text-gray-600">{result.content}</p>
+          {result.file_references && result.file_references.length > 0 && (
+            <div className="mt-2 text-xs text-gray-500">
+              <p>Referenced files: {result.file_references.join(', ')}</p>
+            </div>
+          )}
         </div>
       ))}
     </div>

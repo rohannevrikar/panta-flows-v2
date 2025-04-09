@@ -45,7 +45,7 @@ class ChatResponse(BaseModel):
 # Initialize Azure OpenAI client
 client = AzureOpenAI(
     api_key=os.getenv("AZURE_API_KEY"),
-    api_version="2024-02-15-preview",
+    api_version="2025-01-01-preview",
     azure_endpoint=os.getenv("AZURE_ENDPOINT")
 )
 
@@ -297,6 +297,7 @@ async def create_chat_completion(request: ChatRequest):
 
         # First, let the model decide if it needs to use tools
         try:
+            logger.info(f"Using model: {os.getenv('AZURE_DEPLOYMENT_NAME')}")
             initial_response = client.chat.completions.create(
                 model=os.getenv("AZURE_DEPLOYMENT_NAME"),
                 messages=messages_for_openai,

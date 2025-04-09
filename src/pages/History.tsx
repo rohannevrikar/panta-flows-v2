@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,8 +14,13 @@ import {
 import HistoryItem from "@/components/HistoryItem";
 import ProfileDropdown from "@/components/ProfileDropdown";
 import Logo from "@/components/Logo";
+import { apiService, ChatSession } from "@/lib/api-service";
 
 // Define the history item type with the correct LucideIcon type
+interface HistoryItemSession extends ChatSession {
+  isFavorite?: boolean;
+}
+
 interface HistoryItemType {
   id: string;
   title: string;
@@ -27,87 +31,29 @@ interface HistoryItemType {
   isFavorite: boolean;
 }
 
-const historyItems: HistoryItemType[] = [
-  {
-    id: "hist1",
-    title: "Summarized quarterly report",
-    workflowType: "Document Helper",
-    timestamp: new Date(Date.now() - 1000 * 60 * 30),
-    icon: FileText,
-    status: "completed",
-    isFavorite: false
-  },
-  {
-    id: "hist2",
-    title: "Generated product images",
-    workflowType: "Image Creator",
-    timestamp: new Date(Date.now() - 1000 * 60 * 120),
-    icon: Image,
-    status: "completed",
-    isFavorite: true
-  },
-  {
-    id: "hist3",
-    title: "Code refactoring assistant",
-    workflowType: "Code Helper",
-    timestamp: new Date(Date.now() - 1000 * 60 * 240),
-    icon: Code,
-    status: "failed",
-    isFavorite: false
-  },
-  {
-    id: "hist4",
-    title: "Customer support chat analysis",
-    workflowType: "Chat Assistant",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-    icon: MessageSquare,
-    status: "completed",
-    isFavorite: false
-  },
-  // Additional history items
-  {
-    id: "hist5",
-    title: "Project documentation",
-    workflowType: "Document Helper",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 48),
-    icon: FileText,
-    status: "completed",
-    isFavorite: true
-  },
-  {
-    id: "hist6",
-    title: "API integration code",
-    workflowType: "Code Helper",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 72),
-    icon: Code,
-    status: "completed",
-    isFavorite: false
-  },
-  {
-    id: "hist7",
-    title: "Marketing campaign images",
-    workflowType: "Image Creator",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 96),
-    icon: Image,
-    status: "completed",
-    isFavorite: true
-  },
-  {
-    id: "hist8",
-    title: "User feedback analysis",
-    workflowType: "Chat Assistant",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 120),
-    icon: MessageSquare,
-    status: "processing",
-    isFavorite: false
-  }
-];
-
 const History = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
-  const [historyData, setHistoryData] = useState<HistoryItemType[]>(historyItems);
+  const [historyData, setHistoryData] = useState<HistoryItemSession[]>([]);
   
+  // Load chat history
+  useEffect(() => {
+    const loadHistory = async () => {
+      try {
+        const history = await apiService.getChatHistory('default-user', 20); // Load last 20 sessions
+        // Add isFavorite property to each session
+        const historyWithFavorites = history.map(session => ({
+          ...session,
+          isFavorite: false
+        }));
+        setHistoryData(historyWithFavorites);
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      }
+    };
+    loadHistory();
+  }, []);
+
   const toggleFavorite = (id: string) => {
     setHistoryData(prev =>
       prev.map(item => 
@@ -124,9 +70,9 @@ const History = () => {
     );
   };
 
-  const filteredHistory = historyData.filter(item => 
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.workflowType.toLowerCase().includes(searchQuery.toLowerCase())
+  // Filter history based on search query
+  const filteredHistory = historyData.filter(session =>
+    session.workflowTitle.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -172,21 +118,18 @@ const History = () => {
               <p>No history items found</p>
             </div>
           ) : (
-            filteredHistory.map((item) => (
+            filteredHistory.map((session) => (
               <HistoryItem
-                key={item.id}
-                title={item.title}
-                workflowType={item.workflowType}
-                timestamp={item.timestamp}
-                icon={item.icon}
-                status={item.status}
-                isFavorite={item.isFavorite}
-                onClick={() => {
-                  console.log(`History item clicked: ${item.id}`);
-                  navigate('/chat');
-                }}
-                onFavoriteToggle={() => toggleFavorite(item.id)}
-                onRename={(newName) => renameHistoryItem(item.id, newName)}
+                key={session.id}
+                title={session.workflowTitle}
+                workflowType={session.workflowId}
+                timestamp={new Date(session.updatedAt)}
+                icon={MessageSquare}
+                status="completed"
+                isFavorite={false}
+                onClick={() => navigate(`/chat?sessionId=${session.id}`)}
+                onFavoriteToggle={() => toggleFavorite(session.id)}
+                onRename={(newName) => renameHistoryItem(session.id, newName)}
               />
             ))
           )}

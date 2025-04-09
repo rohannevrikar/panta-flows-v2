@@ -10,6 +10,7 @@ export interface ChatMessage {
   userId?: string;
   files?: FileInfo[];
   file_references?: string[];
+  file_ids?: string[];  // Keep this for frontend state management
 }
 
 export interface ChatCompletionRequest {
