@@ -11,7 +11,14 @@ export const API_CONFIG = {
       search: '/api/files/search',
       delete: (fileId: string) => `/api/files/${fileId}`
     },
-    webSearch: '/api/web-search/search'
+    webSearch: '/api/web-search/search',
+    workflows: {
+      create: '/api/workflows',
+      list: '/api/workflows',
+      get: (workflowId: string) => `/api/workflows/${workflowId}`,
+      update: (workflowId: string) => `/api/workflows/${workflowId}`,
+      delete: (workflowId: string) => `/api/workflows/${workflowId}`
+    }
   }
 };
 

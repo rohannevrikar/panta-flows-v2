@@ -1,31 +1,68 @@
-
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import * as React from 'react';
+import { useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { apiService } from '../lib/api-service';
+import LanguageSelector from '../components/LanguageSelector';
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useToast } from "@/hooks/use-toast";
 import Logo from "@/components/Logo";
 
-const Login = () => {
+export default function Login() {
   const { theme } = useTheme();
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [searchParams] = useSearchParams();
+  const lang = searchParams.get('lang') || 'en';
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
-  const handleLogin = (e: React.FormEvent) => {
+  // Language-specific text
+  const translations = {
+    en: {
+      email: 'Email',
+      password: 'Password',
+      login: 'Login',
+      noAccount: "Don't have an account?",
+      signUp: 'Sign up',
+      loginError: 'Failed to login',
+      loginSuccess: 'Login successful',
+      welcomeBack: 'Welcome back!',
+      logIn: 'Log in',
+      forgotPassword: 'Forgot password?',
+      or: 'or',
+      signInWithGoogle: 'Sign in with Google'
+    },
+    de: {
+      email: 'E-Mail',
+      password: 'Passwort',
+      login: 'Anmelden',
+      noAccount: 'Kein Konto?',
+      signUp: 'Registrieren',
+      loginError: 'Anmeldung fehlgeschlagen',
+      loginSuccess: 'Anmeldung erfolgreich',
+      welcomeBack: 'Willkommen zurück!',
+      logIn: 'Log dich ein',
+      forgotPassword: 'Passwort vergessen?',
+      or: 'oder',
+      signInWithGoogle: 'Mit Google anmelden'
+    }
+  };
+
+  const t = translations[lang as keyof typeof translations];
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     
     // For test case: allow login without credentials
     toast({
-      title: "Login successful",
+      title: t.loginSuccess,
       description: "Redirecting to dashboard...",
     });
     
@@ -82,15 +119,15 @@ const Login = () => {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-8 bg-gray-50">
         <Card className="w-full max-w-md p-8 border shadow-lg bg-white rounded-xl">
           <div className="text-center mb-8">
-            <h2 className="text-xl font-medium text-gray-600">Willkommen zurück!</h2>
+            <h2 className="text-xl font-medium text-gray-600">{t.welcomeBack}</h2>
             <h1 className="text-3xl font-bold mt-2 mb-2" 
-              style={{ color: theme.primaryColor }}>Log dich ein</h1>
+              style={{ color: theme.primaryColor }}>{t.logIn}</h1>
           </div>
 
           <CardContent className="p-0">
-            <form onSubmit={handleLogin} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email">E-Mail</Label>
+                <Label htmlFor="email">{t.email}</Label>
                 <Input 
                   id="email" 
                   type="email" 
@@ -102,7 +139,7 @@ const Login = () => {
               
               <div className="space-y-2">
                 <div className="flex justify-between">
-                  <Label htmlFor="password">Passwort</Label>
+                  <Label htmlFor="password">{t.password}</Label>
                 </div>
                 <div className="relative">
                   <Input 
@@ -122,7 +159,7 @@ const Login = () => {
                 </div>
                 <div className="text-right">
                   <a href="#" className="text-sm text-gray-500 hover:underline">
-                    Passwort vergessen?
+                    {t.forgotPassword}
                   </a>
                 </div>
               </div>
@@ -133,7 +170,7 @@ const Login = () => {
                 style={{ backgroundColor: theme.primaryColor }}
                 disabled={isLoading}
               >
-                {isLoading ? "Logging in..." : "Einloggen"}
+                {isLoading ? "Logging in..." : t.login}
               </Button>
               
               <div className="relative my-6">
@@ -141,7 +178,7 @@ const Login = () => {
                   <div className="w-full border-t border-gray-300"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-white text-gray-500">oder</span>
+                  <span className="px-4 bg-white text-gray-500">{t.or}</span>
                 </div>
               </div>
               
@@ -153,14 +190,28 @@ const Login = () => {
                 <img src="https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_24dp.png" 
                      alt="Google" 
                      className="h-5 mr-2" />
-                Mit Google anmelden
+                {t.signInWithGoogle}
               </Button>
             </form>
           </CardContent>
         </Card>
+
+        <div className="text-center mt-4">
+          <p className="text-sm text-gray-600">
+            {t.noAccount}{' '}
+            <a
+              href={`/signup?lang=${lang}`}
+              className="font-medium text-indigo-600 hover:text-indigo-500"
+            >
+              {t.signUp}
+            </a>
+          </p>
+        </div>
+
+        <div className="absolute top-4 right-4">
+          <LanguageSelector />
+        </div>
       </div>
     </div>
   );
-};
-
-export default Login;
+}

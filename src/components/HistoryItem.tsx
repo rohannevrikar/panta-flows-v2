@@ -1,6 +1,4 @@
-
-import { LucideIcon, MoreHorizontal, Star, StarOff, Edit } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { LucideIcon, MoreHorizontal } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useState } from "react";
 import { 
@@ -10,126 +8,76 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ChatSession } from "@/lib/api-service";
 
 interface HistoryItemProps {
-  title: string;
-  workflowType: string;
-  timestamp: Date;
-  icon: LucideIcon;
-  status?: "completed" | "processing" | "failed";
-  isFavorite?: boolean;
-  className?: string;
-  onClick?: () => void;
-  onFavoriteToggle?: () => void;
-  onRename?: (newName: string) => void;
+  session: ChatSession;
+  onSelect: (session: ChatSession) => void;
+  onDelete: (sessionId: string) => void;
+  workflowIcon: LucideIcon;
 }
 
-const HistoryItem = ({ 
-  title, 
-  workflowType,
-  timestamp, 
-  icon: Icon,
-  status = "completed",
-  isFavorite = false,
-  className,
-  onClick,
-  onFavoriteToggle = () => {},
-  onRename = () => {}
-}: HistoryItemProps) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [newTitle, setNewTitle] = useState(title);
-  
-  const statusColors = {
-    completed: "text-green-500",
-    processing: "text-amber-500",
-    failed: "text-red-500"
-  };
+export default function HistoryItem({ session, onSelect, onDelete, workflowIcon: Icon }: HistoryItemProps) {
+  const [isHovered, setIsHovered] = useState(false);
 
-  const handleRename = () => {
-    onRename(newTitle);
-    setIsEditing(false);
+  const formatDate = (date: Date | string | undefined) => {
+    try {
+      if (!date) return 'Just now';
+      const dateObj = date instanceof Date ? date : new Date(date);
+      if (isNaN(dateObj.getTime())) return 'Just now';
+      return formatDistanceToNow(dateObj, { addSuffix: true });
+    } catch (err) {
+      console.error('Error formatting date:', err);
+      return 'Just now';
+    }
   };
 
   return (
     <div 
-      className={cn("history-item", className)}
+      className={`relative rounded-lg border transition-all duration-200 ${
+        isHovered ? 'border-gray-300 shadow-md' : 'border-gray-200'
+      }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <div className={cn("flex items-center justify-center w-8 h-8 rounded-full bg-panta-blue-100 mr-3")}>
-        <Icon className="h-4 w-4 text-panta-blue" />
-      </div>
-      
-      <div className="flex-1" onClick={onClick}>
-        {isEditing ? (
+      <div 
+        className="p-4 cursor-pointer"
+        onClick={() => onSelect(session)}
+      >
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Input
-              value={newTitle}
-              onChange={(e) => setNewTitle(e.target.value)}
-              className="h-7 py-1 text-sm"
-              autoFocus
-            />
-            <Button size="sm" className="h-7 px-2 py-1" onClick={handleRename}>Save</Button>
-            <Button 
-              size="sm" 
-              variant="outline" 
-              className="h-7 px-2 py-1"
-              onClick={() => {
-                setNewTitle(title);
-                setIsEditing(false);
-              }}
-            >
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <>
-            <h4 className="text-sm font-medium">{title}</h4>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-panta-blue font-medium">{workflowType}</span>
-              <span className="text-xs text-gray-500">
-                {formatDistanceToNow(timestamp, { addSuffix: true })}
-              </span>
+            <div className="h-8 w-8 rounded-full bg-panta-blue flex items-center justify-center">
+              <Icon className="h-5 w-5 text-white" />
             </div>
-          </>
-        )}
-      </div>
-      
-      <div className="flex items-center">
-        <div className={cn("text-xs font-medium mr-2", statusColors[status])}>
-          {status === "completed" && "Completed"}
-          {status === "processing" && "Processing"}
-          {status === "failed" && "Failed"}
+            <div>
+              <h3 className="font-medium text-gray-900">{session.title || 'Untitled Workflow'}</h3>
+              <p className="text-sm text-gray-500">
+                {formatDate(session.created_at)}
+              </p>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => e.stopPropagation()}
+                className="h-8 w-8 p-0"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                onDelete(session.id);
+              }}>
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsEditing(true)}>
-              <Edit className="mr-2 h-4 w-4" />
-              Rename
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={onFavoriteToggle}>
-              {isFavorite ? (
-                <>
-                  <StarOff className="mr-2 h-4 w-4" />
-                  Remove from favorites
-                </>
-              ) : (
-                <>
-                  <Star className="mr-2 h-4 w-4" />
-                  Add to favorites
-                </>
-              )}
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
     </div>
   );
-};
-
-export default HistoryItem;
+}

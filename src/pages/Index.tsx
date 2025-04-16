@@ -28,12 +28,19 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import { apiService, ChatSession } from "@/lib/api-service";
+import { WorkflowDialog } from "@/components/WorkflowDialog";
 
 interface HistoryItemSession extends ChatSession {
   isFavorite?: boolean;
+  workflowTitle?: string;
+  workflowColor?: string;
+  updatedAt?: string;
+  systemPrompt?: string;
+  conversationStarters?: string[];
 }
 
-interface Workflow {
+// Frontend Workflow interface
+interface FrontendWorkflow {
   id: string;
   title: string;
   description: string;
@@ -42,50 +49,104 @@ interface Workflow {
   translationKey?: string;
   systemPrompt?: string;
   conversationStarters?: { id: string; text: string }[];
+  created_at?: string;
 }
 
-const workflows: Workflow[] = [
+interface WorkflowFormData {
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  color: string;
+  systemPrompt: string;
+  conversationStarters: { id: string; text: string }[];
+}
+
+// API Workflow interface
+interface ApiWorkflow {
+  id: string;
+  title: string;
+  description: string;
+  system_prompt: string;
+  icon_name: string;
+  color: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  conversation_starters: { id: string; text: string }[];
+  is_default: boolean;
+}
+
+const iconMap: Record<string, LucideIcon> = {
+  "Chat": MessageSquare,
+  "Code": Code,
+  "Image": Image,
+  "Document": FileText,
+  "Video": Video,
+  "Music": Music,
+  "Bot": Bot
+};
+
+const convertApiToFrontendWorkflow = (apiWorkflow: ApiWorkflow): FrontendWorkflow => {
+  return {
+    id: apiWorkflow.id,
+    title: apiWorkflow.title,
+    description: apiWorkflow.description,
+    icon: iconMap[apiWorkflow.icon_name] || MessageSquare,
+    color: apiWorkflow.color,
+    systemPrompt: apiWorkflow.system_prompt,
+    conversationStarters: apiWorkflow.conversation_starters,
+    created_at: apiWorkflow.created_at
+  };
+};
+
+const workflows: FrontendWorkflow[] = [
   {
     id: "chat",
     title: "Chat Assistant",
     description: "General purpose AI chat assistant",
     icon: MessageSquare,
-    translationKey: "chatAssistant"
+    translationKey: "chatAssistant",
+    systemPrompt: "You are a helpful AI assistant. Your goal is to provide accurate, helpful, and friendly responses to user queries. You can help with a wide range of topics and tasks."
   },
   {
     id: "code",
     title: "Code Helper",
     description: "Generate and explain code",
     icon: Code,
-    translationKey: "codeHelper"
+    translationKey: "codeHelper",
+    systemPrompt: "You are an expert programming assistant. Your goal is to help users with coding tasks, including:\n- Writing and explaining code\n- Debugging issues\n- Suggesting best practices\n- Providing code examples\n- Explaining programming concepts\n\nAlways provide clear, well-documented code and explain your reasoning."
   },
   {
     id: "image",
     title: "Image Creator",
     description: "Create images from text descriptions",
     icon: Image,
-    translationKey: "imageCreator"
+    translationKey: "imageCreator",
+    systemPrompt: "You are an AI image creation assistant. Your goal is to help users create images from text descriptions. You can help with:\n- Generating image prompts\n- Refining image descriptions\n- Suggesting visual styles\n- Providing image composition tips"
   },
   {
     id: "doc",
     title: "Document Helper",
     description: "Summarize and extract from documents",
     icon: FileText,
-    translationKey: "documentHelper"
+    translationKey: "documentHelper",
+    systemPrompt: "You are a document analysis assistant. Your goal is to help users understand and work with documents by:\n- Summarizing content\n- Extracting key information\n- Analyzing text\n- Identifying important points\n- Providing document insights"
   },
   {
     id: "video",
     title: "Video Generator",
     description: "Create videos from text prompts",
     icon: Video,
-    translationKey: "videoGenerator"
+    translationKey: "videoGenerator",
+    systemPrompt: "You are a video creation assistant. Your goal is to help users create videos by:\n- Generating video scripts\n- Suggesting visual elements\n- Planning video structure\n- Providing production tips\n- Recommending video styles"
   },
   {
     id: "music",
     title: "Music Composer",
     description: "Generate music and audio",
     icon: Music,
-    translationKey: "musicComposer"
+    translationKey: "musicComposer",
+    systemPrompt: "You are a music composition assistant. Your goal is to help users create music by:\n- Generating musical ideas\n- Suggesting melodies and harmonies\n- Providing composition tips\n- Recommending musical styles\n- Explaining music theory concepts"
   },
 ];
 
@@ -136,10 +197,16 @@ const Index = () => {
   const [historyData, setHistoryData] = useState<HistoryItemSession[]>([]);
   const [sliderValue, setSliderValue] = useState([50]);
   const [showNewWorkflowDialog, setShowNewWorkflowDialog] = useState(false);
-  const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>(workflows);
+  const [availableWorkflows, setAvailableWorkflows] = useState<FrontendWorkflow[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [currentWorkflow, setCurrentWorkflow] = useState<Workflow | null>(null);
+  const [currentWorkflow, setCurrentWorkflow] = useState<FrontendWorkflow | null>(null);
   const [showChat, setShowChat] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [workflowColors, setWorkflowColors] = useState<Record<string, string>>({});
+  const [workflowIcons, setWorkflowIcons] = useState<Record<string, LucideIcon>>({});
+  const [editingWorkflow, setEditingWorkflow] = useState<FrontendWorkflow | null>(null);
+  const [isWorkflowDialogOpen, setIsWorkflowDialogOpen] = useState(false);
   
   const handleSearchSubmit = (text: string, files: File[]) => {
     // Navigate to chat with search query and replace the current history entry
@@ -162,64 +229,251 @@ const Index = () => {
     );
   };
 
-  const handleCreateWorkflow = (workflowData: any) => {
-    const iconMap: Record<string, LucideIcon> = {
-      "Chat": MessageSquare,
-      "Code": Code,
-      "Image": Image,
-      "Document": FileText,
-      "Video": Video,
-      "Music": Music,
-      "Bot": Bot
+  // Load workflows from API
+  useEffect(() => {
+    const loadWorkflows = async () => {
+      try {
+        setIsLoading(true);
+        const apiWorkflows = await apiService.getWorkflows('default-user');
+        const frontendWorkflows = apiWorkflows.map(convertApiToFrontendWorkflow);
+        setAvailableWorkflows(frontendWorkflows);
+      } catch (err) {
+        console.error('Error loading workflows:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load workflows');
+      } finally {
+        setIsLoading(false);
+      }
     };
+    loadWorkflows();
+  }, []);
 
-    const iconComponent = iconMap[workflowData.selectedIcon] || MessageSquare;
-
-    const newWorkflow = {
-      id: `workflow-${Date.now()}`,
-      title: workflowData.title,
-      description: workflowData.description,
-      icon: iconComponent,
-      color: workflowData.iconColor,
-      systemPrompt: workflowData.systemPrompt,
-      conversationStarters: workflowData.starters.map((text: string, index: number) => ({
-        id: `starter-${index}`,
-        text
-      }))
-    };
-
-    setAvailableWorkflows(prev => [...prev, newWorkflow]);
-    toast.success("New workflow created successfully!");
+  const handleEditWorkflow = async (workflow: FrontendWorkflow) => {
+    try {
+      console.log('Fetching workflow config for:', workflow.id);
+      const config = await apiService.getWorkflowConfig(workflow.id);
+      console.log('Fetched workflow config:', config);
+      
+      if (!config) {
+        toast.error('Workflow configuration not found');
+        return;
+      }
+      
+      // Convert API config to frontend workflow format
+      const frontendWorkflow: FrontendWorkflow = {
+        id: workflow.id,
+        title: config.title || workflow.title,
+        description: config.description || workflow.description,
+        icon: iconMap[config.icon_name] || workflow.icon || MessageSquare,
+        color: config.color || workflow.color || '#3B82F6',
+        systemPrompt: config.system_prompt || workflow.systemPrompt || '',
+        conversationStarters: config.conversation_starters || workflow.conversationStarters || [],
+        created_at: config.created_at || workflow.created_at
+      };
+      
+      setEditingWorkflow(frontendWorkflow);
+      setShowNewWorkflowDialog(true);
+      toast.success('Editing workflow');
+    } catch (error) {
+      console.error('Error fetching workflow config:', error);
+      toast.error('Failed to load workflow configuration');
+    }
   };
 
-  const handleWorkflowClick = (workflow: Workflow) => {
-    setCurrentWorkflow(workflow);
-    // Navigate to chat with workflowId and replace the current history entry
-    navigate(`/chat?workflowId=${workflow.id}`, { replace: true });
+  const handleCreateWorkflow = async (workflowData: any) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      if (editingWorkflow) {
+        // Get the existing workflow to ensure we have all fields
+        const existingWorkflow = await apiService.getWorkflow(editingWorkflow.id, 'default-user');
+        
+        // Prepare the update data with all required fields
+        const updateData = {
+          id: existingWorkflow.id,
+          title: workflowData.title,
+          description: workflowData.description,
+          system_prompt: workflowData.systemPrompt || existingWorkflow.system_prompt || "You are a helpful assistant.",
+          icon_name: workflowData.selectedIcon,
+          color: workflowData.iconColor,
+          user_id: 'default-user',
+          conversation_starters: workflowData.starters,
+          is_default: existingWorkflow.is_default,
+          created_at: existingWorkflow.created_at,
+          updated_at: new Date().toISOString()
+        };
+        
+        await apiService.updateWorkflow(editingWorkflow.id, updateData, 'default-user');
+        toast.success('Workflow updated successfully');
+      } else {
+        // Create new workflow
+        const newApiWorkflow = await apiService.createWorkflow({
+          title: workflowData.title,
+          description: workflowData.description,
+          system_prompt: workflowData.systemPrompt || "You are a helpful assistant.",
+          icon_name: workflowData.selectedIcon,
+          color: workflowData.iconColor,
+          user_id: 'default-user',
+          conversation_starters: workflowData.starters,
+          is_default: false
+        });
+
+        const newFrontendWorkflow = convertApiToFrontendWorkflow(newApiWorkflow);
+        setAvailableWorkflows(prev => [...prev, newFrontendWorkflow]);
+        toast.success("New workflow created successfully!");
+      }
+
+      // Refresh workflows
+      const apiWorkflows = await apiService.getWorkflows('default-user');
+      const frontendWorkflows = apiWorkflows.map(convertApiToFrontendWorkflow);
+      setAvailableWorkflows(frontendWorkflows);
+      
+      // Close dialog and reset state
+      setShowNewWorkflowDialog(false);
+      setEditingWorkflow(null);
+    } catch (err) {
+      console.error('Error saving workflow:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save workflow');
+      toast.error("Failed to save workflow");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Load chat history
   useEffect(() => {
     const loadHistory = async () => {
       try {
-        const history = await apiService.getChatHistory('default-user', 5); // Load last 5 sessions
-        // Add isFavorite property to each session
-        const historyWithFavorites = history.map(session => ({
-          ...session,
-          isFavorite: false
-        }));
-        setHistoryData(historyWithFavorites);
+        const history = await apiService.getChatSessions();
+        // Sort by date and take the 6 most recent items
+        const recentHistory = history
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 6)
+          .map(session => {
+            // Filter out system messages
+            const filteredMessages = session.messages.filter(msg => msg.role !== 'system');
+            return {
+              id: session.id,
+              title: session.workflowTitle || 'Untitled Workflow',
+              created_at: new Date(session.createdAt),
+              workflow_id: session.workflowId,
+              workflowColor: '#3B82F6', // Default color
+              isFavorite: false,
+              updatedAt: session.updatedAt,
+              messages: filteredMessages // Include filtered messages
+            } as HistoryItemSession;
+          });
+
+        setHistoryData(recentHistory);
+
+        // Only fetch icons for unique workflow IDs
+        const uniqueWorkflowIds = [...new Set(recentHistory.map(session => session.workflow_id).filter(Boolean))];
+        const icons: Record<string, LucideIcon> = {};
+        
+        for (const workflowId of uniqueWorkflowIds) {
+          try {
+            const config = await apiService.getWorkflowConfig(workflowId);
+            if (config?.icon_name) {
+              icons[workflowId] = iconMap[config.icon_name] || MessageSquare;
+            }
+          } catch (err) {
+            console.error(`Failed to fetch workflow config for ${workflowId}:`, err);
+            // Use default icon if config fetch fails
+            icons[workflowId] = MessageSquare;
+          }
+        }
+        setWorkflowIcons(icons);
       } catch (error) {
-        console.error('Error loading chat history:', error);
+        console.error('Error loading history:', error);
+        setHistoryData([]);
       }
     };
     loadHistory();
   }, []);
 
-  // Update history item click handler
-  const handleHistoryItemClick = (session: HistoryItemSession) => {
-    // Navigate to chat with sessionId and replace the current history entry
-    navigate(`/chat?sessionId=${session.id}`, { replace: true });
+  const handleDelete = async (sessionId: string) => {
+    try {
+      await apiService.deleteSession(sessionId);
+      setHistoryData(prev => prev.filter(session => session.id !== sessionId));
+    } catch (err) {
+      console.error('Error deleting session:', err);
+    }
+  };
+
+  const handleHistoryItemClick = async (session: ChatSession) => {
+    try {
+      console.log('Loading session:', session);
+      
+      // Get the session data which includes messages
+      const sessionData = await apiService.getSession(session.id, 'default-user');
+      console.log('Session data:', sessionData);
+      
+      // Check if session exists
+      if (!sessionData) {
+        toast.error('Chat session not found');
+        return;
+      }
+
+      // Get workflow config for the session
+      const config = await apiService.getWorkflowConfig(session.workflow_id || '');
+      console.log('Workflow config:', config);
+      
+      // Convert API config to frontend workflow format
+      const frontendWorkflow: FrontendWorkflow = {
+        id: session.workflow_id || '',
+        title: config.title || '',
+        description: config.description || '',
+        icon: iconMap[config.icon_name] || MessageSquare,
+        color: config.color || '#3B82F6',
+        systemPrompt: config.system_prompt || '',
+        conversationStarters: config.conversation_starters || [],
+        created_at: session.created_at
+      };
+
+      // Include all necessary parameters in the URL
+      const url = `/chat?sessionId=${session.id}&workflowId=${session.workflow_id}&title=${encodeURIComponent(frontendWorkflow.title)}&systemPrompt=${encodeURIComponent(frontendWorkflow.systemPrompt || '')}&starters=${encodeURIComponent(JSON.stringify(frontendWorkflow.conversationStarters || []))}&color=${encodeURIComponent(frontendWorkflow.color)}`;
+      
+      // Set the current workflow and show chat
+      setCurrentWorkflow(frontendWorkflow);
+      setShowChat(true);
+      navigate(url);
+      
+      console.log('Navigation successful to URL:', url);
+    } catch (error) {
+      console.error('Error loading chat session:', error);
+      toast.error('Failed to load chat session. Please try again.');
+    }
+  };
+
+  const handleWorkflowClick = async (workflow: FrontendWorkflow) => {
+    try {
+      console.log('Workflow clicked:', workflow);
+      setIsLoading(true);
+      
+      // Create a new session first
+      const newSession = await apiService.createSession({
+        workflowId: workflow.id,
+        title: workflow.title,
+        workflowTitle: workflow.title,
+        userId: 'default-user',
+        messages: []
+      });
+
+      console.log('New session created:', newSession);
+      
+      // Navigate to chat with sessionId, workflowId, and workflow data
+      const url = `/chat?sessionId=${newSession.id}&workflowId=${workflow.id}&title=${encodeURIComponent(workflow.title)}&systemPrompt=${encodeURIComponent(workflow.systemPrompt || '')}&starters=${encodeURIComponent(JSON.stringify(workflow.conversationStarters || []))}&color=${encodeURIComponent(workflow.color || '#3B82F6')}`;
+      console.log('Navigating to URL:', url);
+      
+      setCurrentWorkflow(workflow);
+      setShowChat(true);
+      navigate(url, { replace: true });
+    } catch (error) {
+      console.error('Error creating session:', error);
+      toast.error('Failed to start chat session');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -255,6 +509,7 @@ const Index = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               onSubmit={handleSearchSubmit}
+              onSearch={(query) => handleSearchSubmit(query, [])}
               disableNavigation={true}
             />
           </section>
@@ -296,6 +551,7 @@ const Index = () => {
                       color={workflow.color}
                       translationKey={workflow.translationKey}
                       onClick={() => handleWorkflowClick(workflow)}
+                      onEdit={() => handleEditWorkflow(workflow)}
                     />
                   ))}
                 </div>
@@ -311,6 +567,7 @@ const Index = () => {
                       icon={workflow.icon}
                       translationKey={workflow.translationKey}
                       onClick={() => handleWorkflowClick(workflow)}
+                      onEdit={() => handleEditWorkflow(workflow)}
                     />
                   ))}
                 </div>
@@ -326,6 +583,7 @@ const Index = () => {
                       icon={workflow.icon}
                       translationKey={workflow.translationKey}
                       onClick={() => handleWorkflowClick(workflow)}
+                      onEdit={() => handleEditWorkflow(workflow)}
                     />
                   ))}
                 </div>
@@ -376,15 +634,10 @@ const Index = () => {
               {historyData.map((session) => (
                 <HistoryItem
                   key={session.id}
-                  title={session.workflowTitle}
-                  workflowType={session.workflowId}
-                  timestamp={new Date(session.updatedAt)}
-                  icon={MessageSquare}
-                  status="completed"
-                  isFavorite={false}
-                  onClick={() => handleHistoryItemClick(session)}
-                  onFavoriteToggle={() => {}} // Implement if needed
-                  onRename={() => {}} // Implement if needed
+                  session={session}
+                  onSelect={handleHistoryItemClick}
+                  onDelete={handleDelete}
+                  workflowIcon={session.workflow_id ? (workflowIcons[session.workflow_id] || MessageSquare) : MessageSquare}
                 />
               ))}
             </div>
@@ -394,9 +647,25 @@ const Index = () => {
 
       <NewWorkflowDialog
         open={showNewWorkflowDialog}
-        onClose={() => setShowNewWorkflowDialog(false)}
+        onClose={() => {
+          setShowNewWorkflowDialog(false);
+          setEditingWorkflow(null);
+        }}
         onCreateWorkflow={handleCreateWorkflow}
+        workflow={editingWorkflow}
       />
+
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+        </div>
+      )}
+      
+      {error && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50">
+          {error}
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
@@ -21,8 +20,11 @@ const Logo = ({ className, variant = "default", onClick, small = false }: LogoPr
       >
         <img 
           src="/panta-logo.png" 
-          alt="Panta Rhai Logo" 
-          className={cn(small ? "h-7 mr-1" : "h-10 mr-2")} 
+          alt="Panta Logo" 
+          className={cn(
+            "object-contain",
+            small ? "h-8 w-8" : "h-12 w-12"
+          )} 
         />
         {!small && (
           <>

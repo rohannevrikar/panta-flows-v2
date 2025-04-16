@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Search, Send, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface SearchChatProps {
   onFocus?: () => void;
@@ -9,6 +10,7 @@ interface SearchChatProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit?: (text: string, files: File[]) => void;
   disableNavigation?: boolean;
+  onSearch: (query: string) => void;
 }
 
 const SearchChat = ({ 
@@ -17,7 +19,8 @@ const SearchChat = ({
   value, 
   onChange,
   onSubmit,
-  disableNavigation = false
+  disableNavigation = false,
+  onSearch
 }: SearchChatProps) => {
   const [query, setQuery] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -105,7 +108,7 @@ const SearchChat = ({
         <div className="absolute inset-y-0 left-0 flex items-center pl-3">
           <Search className="h-5 w-5 text-muted-foreground" />
         </div>
-        <input
+        <Input
           ref={inputRef}
           type="text"
           placeholder={uploading ? "Uploading files..." : "Search or start a conversation..."}
