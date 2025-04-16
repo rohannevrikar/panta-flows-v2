@@ -53,7 +53,10 @@ export function useAzureChat(options: UseAzureChatOptions = {}) {
       });
 
       // Add assistant response to the conversation
-      const assistantMessage = response.choices[0].message;
+      const assistantMessage: ChatMessage = {
+        role: 'assistant',
+        content: response.choices[0].message.content
+      };
       setMessages(prev => [...prev, assistantMessage]);
 
       return assistantMessage;

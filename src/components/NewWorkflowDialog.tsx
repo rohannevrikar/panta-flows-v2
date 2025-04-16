@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Check, MessageSquare, Code, Image, FileText, Video, Music, Bot } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -48,19 +47,30 @@ interface WorkflowFormData {
   systemPrompt: string;
   selectedIcon: string;
   iconColor: string;
-  starters: string[];
+  starters: { id: string; text: string }[];
 }
 
 interface NewWorkflowDialogProps {
   open: boolean;
   onClose: () => void;
   onCreateWorkflow: (workflow: WorkflowFormData) => void;
+  workflow?: {
+    id: string;
+    title: string;
+    description: string;
+    icon: any;
+    color?: string;
+    systemPrompt: string;
+    conversationStarters: { id: string; text: string }[];
+    created_at?: string;
+  };
 }
 
 const NewWorkflowDialog = ({
   open,
   onClose,
   onCreateWorkflow,
+  workflow
 }: NewWorkflowDialogProps) => {
   const [formData, setFormData] = useState<WorkflowFormData>({
     title: "",
@@ -68,9 +78,40 @@ const NewWorkflowDialog = ({
     systemPrompt: "You are a helpful assistant.",
     selectedIcon: "Chat",
     iconColor: "text-gray-600",
-    starters: ["How can I help you today?", "What would you like to know?"],
+    starters: [
+      { id: "starter-1", text: "How can I help you today?" },
+      { id: "starter-2", text: "What would you like to know?" }
+    ],
   });
   const [currentStarter, setCurrentStarter] = useState("");
+
+  useEffect(() => {
+    if (workflow && workflow.id) {
+      setFormData({
+        title: workflow.title,
+        description: workflow.description || "",
+        systemPrompt: workflow.systemPrompt || "You are a helpful assistant.",
+        selectedIcon: Object.keys(iconOptions).find(key => iconOptions[key].icon === workflow.icon) || "Chat",
+        iconColor: workflow.color || "text-gray-600",
+        starters: workflow.conversationStarters || [
+          { id: "starter-1", text: "How can I help you today?" },
+          { id: "starter-2", text: "What would you like to know?" }
+        ],
+      });
+    } else {
+      setFormData({
+        title: "",
+        description: "",
+        systemPrompt: "You are a helpful assistant.",
+        selectedIcon: "Chat",
+        iconColor: "text-gray-600",
+        starters: [
+          { id: "starter-1", text: "How can I help you today?" },
+          { id: "starter-2", text: "What would you like to know?" }
+        ],
+      });
+    }
+  }, [workflow]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -91,7 +132,10 @@ const NewWorkflowDialog = ({
     if (currentStarter.trim()) {
       setFormData((prev) => ({
         ...prev,
-        starters: [...prev.starters, currentStarter.trim()],
+        starters: [...prev.starters, { 
+          id: `starter-${Date.now()}`, 
+          text: currentStarter.trim() 
+        }],
       }));
       setCurrentStarter("");
     }
@@ -115,9 +159,9 @@ const NewWorkflowDialog = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
-            <DialogTitle>Create New Workflow</DialogTitle>
+            <DialogTitle>{workflow ? 'Edit Workflow' : 'Create New Workflow'}</DialogTitle>
             <DialogDescription>
-              Configure your new chat-based workflow.
+              {workflow ? 'Update your workflow configuration.' : 'Configure your new chat-based workflow.'}
             </DialogDescription>
           </DialogHeader>
 
@@ -234,10 +278,10 @@ const NewWorkflowDialog = ({
               <div className="mt-2 space-y-2">
                 {formData.starters.map((starter, index) => (
                   <div
-                    key={index}
+                    key={starter.id}
                     className="flex items-center justify-between rounded-md border border-input bg-background p-2"
                   >
-                    <span className="text-sm truncate flex-1">{starter}</span>
+                    <span className="text-sm truncate flex-1">{starter.text}</span>
                     <Button
                       type="button"
                       variant="ghost"
@@ -257,7 +301,9 @@ const NewWorkflowDialog = ({
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
-            <Button type="submit">Create Workflow</Button>
+            <Button type="submit">
+              {workflow ? 'Save Changes' : 'Create Workflow'}
+            </Button>
           </DialogFooter>
         </form>
       </DialogContent>

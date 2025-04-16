@@ -1,4 +1,3 @@
-
 import { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import WorkflowMenu from "./WorkflowMenu";
@@ -14,6 +13,9 @@ interface WorkflowCardProps {
   className?: string;
   onClick?: () => void;
   translationKey?: string;
+  onEdit?: () => void;
+  onSettings?: () => void;
+  onDelete?: () => void;
 }
 
 const WorkflowCard = ({ 
@@ -23,27 +25,30 @@ const WorkflowCard = ({
   color = "text-gray-600",  // Default color if none provided
   className,
   onClick,
-  translationKey
+  translationKey,
+  onEdit,
+  onSettings,
+  onDelete
 }: WorkflowCardProps) => {
   const [isHovering, setIsHovering] = useState(false);
   const { translate } = useLanguage();
   
   const handleEdit = () => {
-    toast.info(`${translate('menu.editWorkflow')}: ${title}`);
+    if (onEdit) {
+      onEdit();
+    }
   };
   
   const handleSettings = () => {
-    toast.info(`${translate('menu.workflowSettings')}: ${title}`);
+    if (onSettings) {
+      onSettings();
+    }
   };
   
   const handleDelete = () => {
-    toast.error(`${translate('menu.deleteWorkflow')}: ${title}`, {
-      description: translate('menu.deleteConfirm'),
-      action: {
-        label: translate('menu.undoDelete'),
-        onClick: () => toast.success(translate('menu.deleteCancelled'))
-      }
-    });
+    if (onDelete) {
+      onDelete();
+    }
   };
 
   // Display translated title and description if translation keys are available

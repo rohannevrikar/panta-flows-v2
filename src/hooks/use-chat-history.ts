@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { apiService, ChatSession, ChatMessage } from '@/lib/api-service';
 
 interface UseChatHistoryOptions {
@@ -6,76 +6,124 @@ interface UseChatHistoryOptions {
   workflowId?: string;
   workflowTitle?: string;
   sessionId?: string;
+  systemPrompt?: string;
 }
 
 export function useChatHistory({
   userId,
   workflowId,
   workflowTitle,
-  sessionId
+  sessionId,
+  systemPrompt
 }: UseChatHistoryOptions) {
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const hasLoadedSession = useRef<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
 
-  // Load chat history
-  const loadChatHistory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const history = await apiService.getChatHistory(userId);
-      setSessions(history);
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load chat history'));
-      console.error('Error loading chat history:', err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
+  // Load chat history and session in a single effect
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
 
-  // Load specific session
-  const loadSession = useCallback(async (id: string) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const session = await apiService.getSession(id, userId);
-      setCurrentSession(session);
-      return session;
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error('Failed to load session'));
-      console.error('Error loading session:', err);
-      return null;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [userId]);
+        // If we have a sessionId, load that specific session first
+        if (sessionId) {
+          // Skip if we've already loaded this session
+          if (hasLoadedSession.current === sessionId) {
+            return;
+          }
 
-  // Create new session
+          const session = await apiService.getSession(sessionId, userId);
+          if (session) {
+            setCurrentSession(session);
+            setMessages(session.messages);
+            hasLoadedSession.current = sessionId;
+            return; // Exit early since we have our specific session
+          }
+        }
+
+        // If no sessionId or session not found, load all sessions
+        const history = await apiService.getChatHistory(userId);
+        setSessions(history);
+
+        // If we have a workflowId, filter sessions for that workflow
+        if (workflowId) {
+          const workflowSessions = history.filter(session => session.workflowId === workflowId);
+          if (workflowSessions.length > 0) {
+            const mostRecentSession = workflowSessions.reduce((prev, current) => 
+              new Date(current.updatedAt) > new Date(prev.updatedAt) ? current : prev
+            );
+            setCurrentSession(mostRecentSession);
+            setMessages(mostRecentSession.messages);
+          }
+        }
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error('Failed to load data'));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
+  }, [userId, sessionId, workflowId]);
+
+  // Create a new session
   const createSession = useCallback(async () => {
-    if (!workflowId || !workflowTitle) {
-      throw new Error('Workflow ID and title are required to create a session');
-    }
-
     try {
       setIsLoading(true);
       setError(null);
-      const session = await apiService.createSession({
+
+      const newSession = await apiService.createSession({
+        userId,
         workflowId,
         workflowTitle,
-        userId,
-        messages: []
+        messages: [] // Always start with empty messages
       });
-      setCurrentSession(session);
-      return session;
+
+      if (newSession) {
+        setCurrentSession(newSession);
+        setSessions(prev => [...prev, newSession]);
+        hasLoadedSession.current = newSession.id;
+      }
+
+      return newSession;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to create session'));
-      console.error('Error creating session:', err);
       return null;
     } finally {
       setIsLoading(false);
     }
   }, [userId, workflowId, workflowTitle]);
+
+  // Load a specific session by ID
+  const loadSession = useCallback(async (id: string) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const session = await apiService.getSession(id, userId);
+
+      if (session) {
+        setCurrentSession(session);
+        setSessions(prev => {
+          const exists = prev.some(s => s.id === session.id);
+          return exists ? prev : [...prev, session];
+        });
+        hasLoadedSession.current = id;
+      }
+
+      return session;
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to load specific session'));
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [userId]);
 
   // Add message to session
   const addMessage = useCallback(async (message: Omit<ChatMessage, 'id'>) => {
@@ -88,7 +136,6 @@ export function useChatHistory({
       setError(null);
       const savedMessage = await apiService.addMessage(currentSession.id, userId, message);
       
-      // Update current session with new message
       setCurrentSession(prev => {
         if (!prev) return null;
         return {
@@ -100,31 +147,17 @@ export function useChatHistory({
       return savedMessage;
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to add message'));
-      console.error('Error adding message:', err);
       throw err;
     } finally {
       setIsLoading(false);
     }
   }, [currentSession, userId]);
 
-  // Load initial data
-  useEffect(() => {
-    loadChatHistory();
-  }, [loadChatHistory]);
-
-  // Load specific session if sessionId is provided
-  useEffect(() => {
-    if (sessionId) {
-      loadSession(sessionId);
-    }
-  }, [sessionId, loadSession]);
-
   return {
     sessions,
     currentSession,
     isLoading,
     error,
-    loadChatHistory,
     loadSession,
     createSession,
     addMessage

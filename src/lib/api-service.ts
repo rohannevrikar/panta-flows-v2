@@ -11,6 +11,7 @@ export interface ChatMessage {
   files?: FileInfo[];
   file_references?: string[];
   file_ids?: string[];  // Keep this for frontend state management
+  isThinking?: boolean;
 }
 
 export interface ChatCompletionRequest {
@@ -36,12 +37,16 @@ export interface ChatCompletionResponse {
 
 export interface ChatSession {
   id: string;
-  workflowId: string;
-  workflowTitle: string;
-  userId: string;
-  createdAt: string;
-  updatedAt: string;
+  title?: string;
+  workflowTitle?: string;
+  workflowId?: string;
+  userId?: string;
+  created_at: Date;
+  createdAt?: string;
+  workflow_id?: string;
+  isFavorite?: boolean;
   messages: ChatMessage[];
+  updatedAt?: string;
 }
 
 export interface FileInfo {
@@ -77,12 +82,41 @@ export interface WebSearchResult {
   relevance_score?: number;
 }
 
-class ApiService {
+export interface Workflow {
+  id: string;
+  title: string;
+  description: string;
+  system_prompt: string;
+  icon_name: string;
+  color: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  conversation_starters: { id: string; text: string }[];
+  is_default: boolean;
+}
+
+interface WorkflowConfig {
+  id: string;
+  title: string;
+  description: string;
+  icon_name: string;
+  color: string;
+  conversation_starters: Array<{
+    id: string;
+    text: string;
+  }>;
+  system_prompt: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export class ApiService {
   private static instance: ApiService;
   private baseUrl: string;
 
   private constructor() {
-    this.baseUrl = API_CONFIG.baseUrl;
+    this.baseUrl = 'http://localhost:8000';
   }
 
   public static getInstance(): ApiService {
@@ -90,6 +124,73 @@ class ApiService {
       ApiService.instance = new ApiService();
     }
     return ApiService.instance;
+  }
+
+  public async getWorkflows(userId: string): Promise<Workflow[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.workflows.list}?user_id=${userId}`, {
+        headers: API_HEADERS,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to get workflows:', errorText);
+        throw new Error(`API error: ${response.statusText} - ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting workflows:', error);
+      throw error;
+    }
+  }
+
+  async getChatSessions(): Promise<ChatSession[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.sessions}/default-user?limit=100&sort=created_at:desc`, {
+        method: 'GET',
+        headers: API_HEADERS,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch chat sessions');
+      }
+
+      const data = await response.json();
+      return data.map((session: any) => ({
+        ...session,
+        created_at: new Date(session.created_at)
+      }));
+    } catch (error) {
+      console.error('Error fetching chat sessions:', error);
+      throw error;
+    }
+  }
+
+  async getSessionMessages(sessionId: string): Promise<ChatMessage[]> {
+    try {
+      console.log('Fetching messages for session:', sessionId);
+      const response = await fetch(`${this.baseUrl}/api/cosmos/sessions/${sessionId}/messages`, {
+        headers: API_HEADERS
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch messages: ${response.statusText}`);
+      }
+
+      const messages = await response.json();
+      console.log('Fetched messages:', messages);
+      return messages;
+    } catch (error) {
+      console.error('Error fetching session messages:', error);
+      return [];
+    }
+  }
+
+  private getHeaders(): HeadersInit {
+    return {
+      'Content-Type': 'application/json'
+    };
   }
 
   public async createChatCompletion(request: ChatCompletionRequest): Promise<ChatCompletionResponse> {
@@ -112,31 +213,33 @@ class ApiService {
     }
   }
 
-  public async createSession(session: Omit<ChatSession, 'id' | 'createdAt' | 'updatedAt'>): Promise<ChatSession> {
+  public async createSession(session: Omit<ChatSession, 'id' | 'created_at'>): Promise<ChatSession> {
     try {
-      // Add required fields that the backend expects
       const sessionData = {
         ...session,
-        messages: session.messages || [],
+        workflowTitle: session.title,
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        messages: []
       };
-      
-      console.log('Creating session with data:', JSON.stringify(sessionData, null, 2));
       
       const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.sessions}`, {
         method: 'POST',
-        headers: API_HEADERS,
+        headers: this.getHeaders(),
         body: JSON.stringify(sessionData),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Session creation failed:', errorText);
-        throw new Error(`API error: ${response.statusText} - ${errorText}`);
+        console.error('Failed to create session:', errorText);
+        throw new Error(`Failed to create session: ${errorText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      return {
+        ...data,
+        created_at: new Date(data.createdAt)
+      };
     } catch (error) {
       console.error('Error creating session:', error);
       throw error;
@@ -181,15 +284,9 @@ class ApiService {
 
   public async addMessage(sessionId: string, userId: string, message: Omit<ChatMessage, 'id'>): Promise<ChatMessage> {
     try {
-      // Get the session to get workflow info
-      const session = await this.getSession(sessionId, userId);
-      
-      // Add required fields
       const messageData = {
         ...message,
         timestamp: new Date().toISOString(),
-        workflowId: session.workflowId,
-        workflowTitle: session.workflowTitle,
         userId: userId
       };
       
@@ -200,7 +297,7 @@ class ApiService {
       });
 
       if (!response.ok) {
-        throw new Error(`API error: ${response.statusText}`);
+        throw new Error('Failed to add message');
       }
 
       return await response.json();
@@ -316,24 +413,197 @@ class ApiService {
     }
   }
 
-  async sendMessage(content: string): Promise<{ content: string }> {
+  async sendMessage(data: { sessionId: string; userId: string; message: string; fileIds: string[]; systemPrompt?: string }): Promise<{ content: string }> {
     try {
-      const response = await fetch(`${this.baseUrl}/chat`, {
+      console.log('Sending message with data:', JSON.stringify(data, null, 2));
+      
+      // First, save the user message to the database
+      const userMessage = await this.addMessage(data.sessionId, data.userId, {
+        role: 'user',
+        content: data.message,
+        file_ids: data.fileIds || []
+      });
+      console.log('User message saved:', userMessage);
+
+      // Get AI response
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.chat}`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify({
+          messages: [
+            ...(data.systemPrompt ? [{
+              role: 'system',
+              content: data.systemPrompt
+            }] : []),
+            {
+              role: 'user',
+              content: data.message
+            }
+          ],
+          file_ids: data.fileIds || []
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Message sending failed:', errorText);
+        throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
+      }
+
+      const responseData = await response.json();
+      console.log('Message response:', JSON.stringify(responseData, null, 2));
+      
+      // Save the AI response to the database
+      const assistantMessage = await this.addMessage(data.sessionId, data.userId, {
+        role: 'assistant',
+        content: responseData.choices[0].message.content,
+        file_ids: data.fileIds || []
+      });
+      console.log('Assistant message saved:', assistantMessage);
+      
+      return { content: responseData.choices[0].message.content };
+    } catch (error) {
+      console.error('Error sending message:', error);
+      throw error;
+    }
+  }
+
+  public async createWorkflow(workflowData: Omit<Workflow, 'id' | 'created_at' | 'updated_at'>): Promise<Workflow> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.workflows.create}`, {
+        method: 'POST',
+        headers: API_HEADERS,
+        body: JSON.stringify(workflowData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Workflow creation failed:', errorText);
+        throw new Error(`API error: ${response.statusText} - ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating workflow:', error);
+      throw error;
+    }
+  }
+
+  public async getWorkflow(workflowId: string, userId: string): Promise<Workflow> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.workflows.get(workflowId)}?user_id=${userId}`, {
+        headers: API_HEADERS,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to get workflow:', errorText);
+        throw new Error(`API error: ${response.statusText} - ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error getting workflow:', error);
+      throw error;
+    }
+  }
+
+  public async updateWorkflow(workflowId: string, workflowData: Partial<Workflow>, userId: string): Promise<Workflow> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.workflows.update(workflowId)}?user_id=${userId}`, {
+        method: 'PUT',
+        headers: API_HEADERS,
+        body: JSON.stringify(workflowData),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to update workflow:', errorText);
+        throw new Error(`API error: ${response.statusText} - ${errorText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Error updating workflow:', error);
+      throw error;
+    }
+  }
+
+  public async deleteWorkflow(workflowId: string, userId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.workflows.delete(workflowId)}?user_id=${userId}`, {
+        method: 'DELETE',
+        headers: API_HEADERS,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Failed to delete workflow:', errorText);
+        throw new Error(`API error: ${response.statusText} - ${errorText}`);
+      }
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowConfig(workflowId: string): Promise<WorkflowConfig> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/configs/${workflowId}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch workflow configuration');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching workflow config:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowConfigs(): Promise<WorkflowConfig[]> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/configs`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch workflow configurations');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching workflow configs:', error);
+      throw error;
+    }
+  }
+
+  async createWorkflowConfig(config: Omit<WorkflowConfig, 'id' | 'created_at' | 'updated_at'>): Promise<WorkflowConfig> {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/configs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify(config),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to create workflow configuration');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error creating workflow config:', error);
+      throw error;
+    }
+  }
+
+  async deleteSession(sessionId: string): Promise<void> {
+    try {
+      const response = await fetch(`${this.baseUrl}${API_CONFIG.endpoints.sessions}/${sessionId}`, {
+        method: 'DELETE',
+        headers: API_HEADERS,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error('Failed to delete session');
       }
-
-      const data = await response.json();
-      return { content: data.content };
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error deleting session:', error);
       throw error;
     }
   }

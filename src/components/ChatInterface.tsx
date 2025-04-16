@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { User, X, Feather } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,46 @@ import SearchChat from "./SearchChat";
 import { useAzureChat } from "@/hooks/use-azure-chat";
 import { useChatHistory } from "@/hooks/use-chat-history";
 import { useFiles } from "@/hooks/use-files";
-import { ChatMessage } from "@/lib/api-service";
+import { ChatMessage, ChatSession } from "@/lib/types";
 import { useWebSearch } from '@/hooks/use-web-search';
 import { apiService } from "@/lib/api-service";
+import ReactMarkdown from 'react-markdown';
+import { cn } from "@/lib/utils";
+import { toast } from "sonner";
+import { ConversationStarter } from '@/components/ConversationStarter';
+import { FileUpload } from '@/components/FileUpload';
+import { FileInfo } from '@/lib/types';
+import { useAzureOpenAI } from '@/hooks/use-azure-openai';
+import { useWorkflowConfig } from '@/hooks/use-workflow-config';
+import { useUser } from '@/hooks/use-user';
+import { useAuth } from '@/hooks/use-auth';
+import { useChat } from '@/hooks/use-chat';
+import { useChatSession } from '@/hooks/use-chat-session';
+import { useChatMessages } from '@/hooks/use-chat-messages';
+import { useChatHistory as useChatHistoryHook } from '@/hooks/use-chat-history';
+import { useChatSession as useChatSessionHook } from '@/hooks/use-chat-session';
+import { useChatMessages as useChatMessagesHook } from '@/hooks/use-chat-messages';
+import { useChat as useChatHook } from '@/hooks/use-chat';
+import { useAzureOpenAI as useAzureOpenAIHook } from '@/hooks/use-azure-openai';
+import { useWebSearch as useWebSearchHook } from '@/hooks/use-web-search';
+import { useWorkflowConfig as useWorkflowConfigHook } from '@/hooks/use-workflow-config';
+import { useUser as useUserHook } from '@/hooks/use-user';
+import { useAuth as useAuthHook } from '@/hooks/use-auth';
+import { useChatHistory as useChatHistoryHook2 } from '@/hooks/use-chat-history';
+import { useChatSession as useChatSessionHook2 } from '@/hooks/use-chat-session';
+import { useChatMessages as useChatMessagesHook2 } from '@/hooks/use-chat-messages';
+import { useChat as useChatHook2 } from '@/hooks/use-chat';
+import { useAzureOpenAI as useAzureOpenAIHook2 } from '@/hooks/use-azure-openai';
+import { useWebSearch as useWebSearchHook2 } from '@/hooks/use-web-search';
+import { useWorkflowConfig as useWorkflowConfigHook2 } from '@/hooks/use-workflow-config';
+import { useUser as useUserHook2 } from '@/hooks/use-user';
+import { useAuth as useAuthHook2 } from '@/hooks/use-auth';
 
 interface UIMessage extends ChatMessage {
   id: string;
   timestamp: string;
   isError?: boolean;
   sender: "user" | "bot";
-}
-
-interface ConversationStarter {
-  id: string;
-  text: string;
 }
 
 interface ChatInterfaceProps {
@@ -34,6 +60,9 @@ interface ChatInterfaceProps {
   sessionId?: string;
   conversationStarters?: ConversationStarter[];
   systemPrompt?: string;
+  title?: string;
+  starters?: ConversationStarter[];
+  workflowColor?: string;
 }
 
 interface Message {
@@ -47,18 +76,25 @@ interface Message {
   file_references?: string[];
 }
 
-interface FileInfo {
-  name: string;
-  type: string;
-  size: number;
-}
-
 interface SearchChatProps {
   autoFocus?: boolean;
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (text: string, files: File[]) => void;
   disableNavigation?: boolean;
+}
+
+interface WorkflowConfig {
+  id: string;
+  title: string;
+  description: string;
+  icon_name: string;
+  color: string;
+  conversation_starters: Array<{
+    id: string;
+    text: string;
+  }>;
+  system_prompt: string;
 }
 
 const ChatInterface = ({ 
@@ -69,39 +105,59 @@ const ChatInterface = ({
   userId = "default-user",
   sessionId: propSessionId,
   conversationStarters = [],
-  systemPrompt
+  systemPrompt: propSystemPrompt,
+  title: propTitle,
+  starters: propStarters,
+  workflowColor: propWorkflowColor
 }: ChatInterfaceProps) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlSessionId = searchParams.get('sessionId');
   const urlWorkflowId = searchParams.get('workflowId');
   const urlQuery = searchParams.get('query');
+  const urlSystemPrompt = searchParams.get('systemPrompt');
+  const urlTitle = searchParams.get('title');
+  const urlStarters = searchParams.get('starters');
+  const urlWorkflowColor = searchParams.get('color');
+  
+  // Debug logs for URL parameters
+  console.log('URL Parameters:', {
+    urlWorkflowId,
+    urlSessionId,
+    urlQuery,
+    urlSystemPrompt,
+    urlTitle,
+    urlStarters,
+    urlWorkflowColor
+  });
   
   // Use session ID from props or URL
   const effectiveSessionId = propSessionId || urlSessionId;
   
   // Use workflow ID from props or URL
-  const effectiveWorkflowId = workflowId || urlWorkflowId || "default-workflow";
+  const effectiveWorkflowId = urlWorkflowId || workflowId || "default-workflow";
   
-  // Set initial input text if query is provided
-  useEffect(() => {
-    if (urlQuery) {
-      setInputText(urlQuery);
-    }
-  }, [urlQuery]);
+  // Use title from URL or props
+  const effectiveTitle = urlTitle ? decodeURIComponent(urlTitle) : propTitle || workflowTitle;
   
-  // Default conversation starters if none are provided
-  const defaultStarters = [
-    { id: "1", text: "Generate a marketing strategy for my business" },
-    { id: "2", text: "Help me draft an email to a client" },
-    { id: "3", text: "Summarize this article for me" },
-    { id: "4", text: "Create a to-do list for my project" }
-  ];
+  // Use starters from URL or props
+  const effectiveStarters = urlStarters ? JSON.parse(decodeURIComponent(urlStarters)) : propStarters || [];
   
-  // Use provided conversation starters or fall back to defaults
-  const effectiveStarters = conversationStarters.length > 0 
-    ? conversationStarters 
-    : defaultStarters;
+  // Use workflow color from URL or props
+  const effectiveColor = urlWorkflowColor ? decodeURIComponent(urlWorkflowColor) : propWorkflowColor || '#3B82F6';
+  
+  // Determine effective values
+  const effectiveUserId = userId || 'default-user';
+  
+  // Debug logs for effective values
+  console.log('Effective Values:', {
+    effectiveWorkflowId,
+    effectiveSessionId,
+    effectiveTitle,
+    effectiveStarters,
+    effectiveColor,
+    effectiveUserId
+  });
   
   const [inputText, setInputText] = useState('');
   const [showStarters, setShowStarters] = useState(true);
@@ -109,54 +165,132 @@ const ChatInterface = ({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [processingMessageId, setProcessingMessageId] = useState<string | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [workflowConfig, setWorkflowConfig] = useState<WorkflowConfig | null>(null);
+  const [isLoadingConfig, setIsLoadingConfig] = useState(true);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [fileUploadProgress, setFileUploadProgress] = useState<Record<string, number>>({});
+  const [isUploading, setIsUploading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
+  const [streamedMessage, setStreamedMessage] = useState<string>('');
+  const [currentMessageId, setCurrentMessageId] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentSession, setCurrentSession] = useState<ChatSession | null>(null);
+  const [isNewChat, setIsNewChat] = useState(!urlSessionId);
   
-  // Initialize chat history
+  const loadWorkflowConfig = async () => {
+    try {
+      setIsLoadingConfig(true);
+      console.log('ChatInterface: Loading workflow config for:', effectiveWorkflowId);
+      const config = await apiService.getWorkflowConfig(effectiveWorkflowId);
+      console.log('ChatInterface: Loaded workflow config:', config);
+      setWorkflowConfig(config);
+    } catch (error) {
+      console.error('ChatInterface: Error loading workflow config:', error);
+      // Fallback to default config if loading fails
+      const fallbackConfig = {
+        id: effectiveWorkflowId,
+        title: effectiveTitle,
+        description: '',
+        icon_name: 'default',
+        color: effectiveColor,
+        conversation_starters: effectiveStarters,
+        system_prompt: propSystemPrompt || urlSystemPrompt || ""
+      };
+      console.log('ChatInterface: Using fallback config:', fallbackConfig);
+      setWorkflowConfig(fallbackConfig);
+    } finally {
+      setIsLoadingConfig(false);
+    }
+  };
+
+  // Load workflow configuration when workflowId changes
+  useEffect(() => {
+    loadWorkflowConfig();
+  }, [effectiveWorkflowId]);
+
+  // Debug log for current workflow config
+  useEffect(() => {
+    console.log('Current workflow config:', workflowConfig);
+  }, [workflowConfig]);
+
+  // Initialize chat history with the correct workflow
   const { 
-    currentSession, 
-    sessions,
+    currentSession: historyCurrentSession, 
+    sessions: historySessions,
     isLoading: historyLoading, 
     error: historyError,
-    createSession,
-    addMessage,
-    loadSession
+    createSession: historyCreateSession,
+    addMessage: historyAddMessage,
+    loadSession: historyLoadSession
   } = useChatHistory({
     userId,
     workflowId: effectiveWorkflowId,
-    workflowTitle,
-    sessionId: effectiveSessionId
+    workflowTitle: effectiveTitle,
+    sessionId: effectiveSessionId,
+    systemPrompt: propSystemPrompt || urlSystemPrompt || ""
   });
 
-  // Create a new session if none exists and update URL
+  // Load session messages when session ID changes
   useEffect(() => {
-    const initializeSession = async () => {
-      if (!currentSession) {
-        // Always create a new session if no sessionId is provided
-        const newSession = await createSession();
-        if (newSession) {
-          // Update URL with session ID if not already in a session
-          if (!effectiveSessionId) {
-            navigate(`/chat?sessionId=${newSession.id}`, { replace: true });
+    const loadSession = async () => {
+      try {
+        if (effectiveSessionId) {
+          console.log('A. Starting loadSession with effectiveSessionId:', effectiveSessionId);
+          
+          // Get the full session object which includes messages
+          const session = await apiService.getSession(effectiveSessionId, effectiveUserId);
+          console.log('B. Full session data:', {
+            id: session.id,
+            messages: session.messages?.length || 0,
+            messages: session.messages
+          });
+          
+          if (session.messages && session.messages.length > 0) {
+            console.log('C. Setting messages from session:', session.messages);
+            setMessages(session.messages);
+            setShowStarters(false);
+          } else {
+            console.log('D. No messages found, showing starters');
+            setMessages([]);
+            setShowStarters(true);
+            
+            // Add system message only if we have no messages and no existing system message
+            const systemPrompt = workflowConfig?.system_prompt || propSystemPrompt || urlSystemPrompt;
+            if (systemPrompt) {
+              try {
+                // Check if a system message already exists
+                const hasSystemMessage = session.messages?.some(msg => msg.role === 'system');
+                if (!hasSystemMessage) {
+                  console.log('E. Adding system message');
+                  await apiService.addMessage(effectiveSessionId, effectiveUserId, {
+                    role: 'system',
+                    content: systemPrompt
+                  });
+                  console.log('F. System message added successfully');
+                } else {
+                  console.log('G. System message already exists, skipping');
+                }
+              } catch (err) {
+                console.error('H. Failed to add system message:', err);
+                toast.error('Failed to initialize chat session');
+              }
+            }
           }
         }
+      } catch (error) {
+        console.error('I. Error in loadSession:', error);
+        toast.error('Failed to load chat history. Please try again.');
+        setMessages([]);
+        setShowStarters(true);
       }
     };
-    initializeSession();
-  }, [currentSession, effectiveSessionId, createSession, setSearchParams, navigate]);
 
-  // Load messages from current session
-  useEffect(() => {
-    if (currentSession) {
-      setMessages(currentSession.messages);
-    }
-  }, [currentSession]);
-  
-  // Load specific session if sessionId is provided
-  useEffect(() => {
-    if (effectiveSessionId) {
-      loadSession(effectiveSessionId);
-    }
-  }, [effectiveSessionId, loadSession]);
-  
+    loadSession();
+  }, [effectiveSessionId, workflowConfig, propSystemPrompt, urlSystemPrompt, effectiveUserId]);
+
   // Azure OpenAI chat hook with web search enabled
   const { 
     messages: azureMessages, 
@@ -164,7 +298,7 @@ const ChatInterface = ({
     error: azureError, 
     sendMessage 
   } = useAzureChat({
-    systemPrompt: systemPrompt || "You are a helpful AI assistant with access to web search and file search capabilities. IMPORTANT: When files are provided in the request, you MUST use the file_search tool to search through those files before responding. After searching through files, analyze the results thoroughly and provide a comprehensive summary of the information found. Extract and present the most relevant facts, figures, and details from the files. Use web search when you need current information or need to verify facts that aren't in the provided files.",
+    systemPrompt: workflowConfig?.system_prompt || propSystemPrompt || urlSystemPrompt || "",
     temperature: 0.7,
     maxTokens: 800
   });
@@ -197,100 +331,213 @@ const ChatInterface = ({
     refineResults: true
   });
 
+  // Function to scroll to bottom
+  const scrollToBottom = () => {
+    if (scrollAreaRef.current) {
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (viewport) {
+        // Use scrollIntoView on the last message
+        const lastMessage = viewport.querySelector('.message-container:last-child');
+        if (lastMessage) {
+          lastMessage.scrollIntoView({ behavior: 'smooth', block: 'end' });
+        } else {
+          // Fallback to scrolling the viewport
+          viewport.scrollTop = viewport.scrollHeight;
+        }
+      }
+    }
+  };
+
+  // Scroll to bottom when messages change or when thinking indicator appears
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      scrollToBottom();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [messages, processingMessageId]);
+
   const handleClose = () => {
     // Navigate back to the dashboard and replace the current history entry
     navigate('/dashboard', { replace: true });
   };
   
-  const handleStarterClick = async (text: string) => {
-    setInputText(text);
-    setShowStarters(false);
-    try {
-      // Send message to Azure OpenAI
-      const response = await sendMessage(text);
-      
-      // Save user message to history
-      if (currentSession) {
-        await addMessage({
-          role: 'user',
-          content: text
-        });
-        
-        // Save assistant response to history
-        if (response) {
-          await addMessage({
-            role: 'assistant',
-            content: response.content
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-    }
-  };
+  const handleStarterClick = async (starter: string) => {
+    if (!starter.trim() || isLoading) return;
 
-  const handleSubmit = async (text: string, files: File[]) => {
-    if (!text.trim() && files.length === 0) return;
-  
+    setIsLoading(true);
+    const userMessageId = `user-${Date.now()}`;
+    const thinkingMessageId = `thinking-${Date.now()}`;
+
     try {
-      setIsLoading(true);
-      setError(null);
-  
-      // Create user message with uploaded files
+      // Add user message
       const userMessage: ChatMessage = {
+        id: userMessageId,
         role: 'user',
-        content: text,
-        files: files.map(file => ({
-          id: `temp-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          name: file.name,
-          content_type: file.type,
-          size: file.size
-        }))
+        content: starter,
+        timestamp: new Date().toISOString(),
+        workflowId: effectiveWorkflowId,
+        workflowTitle: effectiveTitle,
+        userId: effectiveUserId
       };
-  
-      // Upload files and get their IDs
-      const fileUploadPromises = files.map(async (file) => {
-        const response = await apiService.uploadFile(file);
-        return response.id;
+
+      setMessages(prev => [...prev, userMessage]);
+
+      // Add thinking message
+      const thinkingMessage: ChatMessage = {
+        id: thinkingMessageId,
+        role: 'assistant',
+        content: 'Thinking...',
+        timestamp: new Date().toISOString(),
+        workflowId: effectiveWorkflowId,
+        workflowTitle: effectiveTitle,
+        userId: effectiveUserId,
+        isThinking: true
+      };
+
+      setMessages(prev => [...prev, thinkingMessage]);
+
+      // Send message to API
+      const response = await apiService.sendMessage({
+        sessionId: effectiveSessionId,
+        userId: effectiveUserId,
+        message: starter,
+        fileIds: [],
+        systemPrompt: urlSystemPrompt
       });
-  
-      const uploadedFileIds = await Promise.all(fileUploadPromises);
-      console.log("Uploaded file IDs:", uploadedFileIds);
-  
-      // Send message with file IDs
-      const message = text + (files.length > 0 ? `\n\nI've uploaded ${files.length} file(s).` : '');
-      const response = await sendMessage(message, uploadedFileIds);
-  
-      // Save user message to history
-      if (currentSession) {
-        await addMessage({
-          role: 'user',
-          content: text,
-          files: userMessage.files
-        });
-        
-        // Save assistant response to history
-        if (response) {
-          await addMessage({
-            role: 'assistant',
-            content: response.content
-          });
-        }
-      }
-  
-      // Add messages to chat UI
-      setMessages(prev => [...prev, userMessage, response]);
-  
-      // Clear input and uploaded files
-      setInputText('');
-      setUploadedFiles([]);
-    } catch (err) {
-      console.error('Error sending message:', err);
-      setError(err instanceof Error ? err : new Error('Failed to send message'));
+
+      // Remove thinking message and add assistant response
+      setMessages(prev => prev.filter(msg => msg.id !== thinkingMessageId));
+      
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: response.content,
+        timestamp: new Date().toISOString(),
+        workflowId: effectiveWorkflowId,
+        workflowTitle: effectiveTitle,
+        userId: effectiveUserId
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+      setShowStarters(false);
+    } catch (error) {
+      console.error('Error sending starter message:', error);
+      toast.error('Failed to send message');
+      // Remove thinking message on error
+      setMessages(prev => prev.filter(msg => msg.id !== thinkingMessageId));
     } finally {
       setIsLoading(false);
     }
   };
+
+  const handleSubmit = async (text: string, files: File[] = []) => {
+    if (!text.trim() && files.length === 0) return;
+    setIsLoading(true);
+    const userMessageId = `user-${Date.now()}`;
+    const thinkingMessageId = `thinking-${Date.now()}`;
+
+    try {
+      // Add user message
+      const userMessage: ChatMessage = {
+        id: userMessageId,
+        role: 'user',
+        content: text,
+        timestamp: new Date().toISOString(),
+        workflowId: effectiveWorkflowId,
+        workflowTitle: effectiveTitle,
+        userId: 'default-user',
+        files: files.map(file => ({
+          id: `file-${Date.now()}-${file.name}`,
+          size: file.size,
+          content_type: file.type
+        }))
+      };
+
+      setMessages(prev => [...prev, userMessage]);
+
+      // Add thinking message
+      const thinkingMessage: ChatMessage = {
+        id: thinkingMessageId,
+        role: 'assistant',
+        content: 'Thinking...',
+        timestamp: new Date().toISOString(),
+        workflowId: effectiveWorkflowId,
+        workflowTitle: effectiveTitle,
+        userId: 'default-user',
+        isThinking: true
+      };
+
+      setMessages(prev => [...prev, thinkingMessage]);
+
+      // Clear input and files
+      setInputText('');
+      setUploadedFiles([]);
+
+      // Upload files if any
+      const fileIds = [];
+      for (const file of files) {
+        try {
+          const fileInfo = await apiService.uploadFile(file);
+          fileIds.push(fileInfo.id);
+        } catch (error) {
+          console.error('Error uploading file:', error);
+          toast.error('Failed to upload file');
+        }
+      }
+
+      // Send message to API
+      const response = await apiService.sendMessage({
+        sessionId: effectiveSessionId,
+        userId: effectiveUserId,
+        message: text,
+        fileIds,
+        systemPrompt: urlSystemPrompt
+      });
+
+      // Remove thinking message and add assistant response
+      setMessages(prev => prev.filter(msg => msg.id !== thinkingMessageId));
+      
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant',
+        content: response.content,
+        timestamp: new Date().toISOString(),
+        workflowId: effectiveWorkflowId,
+        workflowTitle: effectiveTitle,
+        userId: effectiveUserId
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Failed to send message');
+      // Remove thinking message on error
+      setMessages(prev => prev.filter(msg => msg.id !== thinkingMessageId));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Convert text color class to hex color
+  const getColorFromClass = (colorClass: string) => {
+    if (!colorClass) return '#3B82F6';
+    if (colorClass.startsWith('text-')) {
+      // Convert Tailwind color classes to hex
+      const colorMap: Record<string, string> = {
+        'text-red-500': '#EF4444',
+        'text-blue-500': '#3B82F6',
+        'text-green-500': '#10B981',
+        'text-yellow-500': '#F59E0B',
+        'text-purple-500': '#8B5CF6',
+        'text-pink-500': '#EC4899',
+        'text-gray-500': '#6B7280'
+      };
+      return colorMap[colorClass] || '#3B82F6';
+    }
+    return colorClass;
+  };
+
+  const displayColor = getColorFromClass(effectiveColor);
 
   return (
     <div className="h-screen w-full flex flex-col bg-gray-50">
@@ -299,8 +546,8 @@ const ChatInterface = ({
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Logo />
           
-          <div className="text-xl font-medium panta-gradient-text">
-            {workflowTitle}
+          <div className="text-xl font-medium" style={{ color: displayColor }}>
+            {effectiveTitle}
           </div>
           
           <div className="flex items-center gap-3">
@@ -315,12 +562,14 @@ const ChatInterface = ({
       
       {/* Chat Interface without Sidebar */}
       <div className="flex flex-col h-[calc(100vh-5rem)] bg-gray-50 relative">
-        <div className="flex-1 flex flex-col relative">
-          <ScrollArea className="flex-1 p-4 pt-6">
-            <div className="max-w-3xl mx-auto space-y-4">
-              {showStarters && uiMessages.length === 0 && (
+        <div className="flex-1 flex flex-col relative bg-gray-50">
+          <ScrollArea ref={scrollAreaRef} className="flex-1 p-4 pt-6 bg-gray-50">
+            <div className="max-w-3xl mx-auto space-y-4 bg-gray-50">
+              {showStarters && (
                 <div className="mb-8 flex flex-col items-center justify-center pt-12">
-                  <h2 className="text-2xl font-semibold mb-6 text-center">{workflowTitle}</h2>
+                  <h2 className="text-2xl font-semibold mb-6 text-center" style={{ color: displayColor }}>
+                    {effectiveTitle}
+                  </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto">
                     {effectiveStarters.map((starter) => (
                       <Button
@@ -335,82 +584,99 @@ const ChatInterface = ({
                   </div>
                 </div>
               )}
-
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${
-                    message.role === "user" ? "justify-end" : "justify-start"
-                  }`}
-                >
-                  <div
-                    className={`flex gap-3 max-w-[80%] ${
-                      message.role === "user" ? "flex-row-reverse" : ""
-                    }`}
-                  >
-                    <div
-                      className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        message.role === "user"
-                          ? "bg-panta-blue"
-                          : "bg-gray-100"
-                      }`}
-                    >
-                      {message.role === "user" ? (
-                        <User className="h-5 w-5 text-white" />
-                      ) : (
-                        <Feather className="h-5 w-5 text-panta-blue" />
-                      )}
+              {messages
+                .filter(message => message.role !== 'system')
+                .map((message, index) => (
+                <div key={`${message.id}-${index}`} className="message-container">
+                  {message.role === "user" && (
+                    <div className="flex justify-end">
+                      <div className="flex gap-3 max-w-[80%]">
+                        <div className="rounded-lg p-4 text-white" style={{ backgroundColor: displayColor }}>
+                          <div className="prose prose-sm max-w-none">
+                            <ReactMarkdown>{message.content}</ReactMarkdown>
+                          </div>
+                        </div>
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center" style={{ backgroundColor: displayColor }}>
+                          <User className="h-5 w-5 text-white" />
+                        </div>
+                      </div>
                     </div>
-                    <div
-                      className={`rounded-lg p-4 ${
-                        message.role === "user"
-                          ? "bg-panta-blue text-white"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      <p>{message.content}</p>
-                      <div
-                        className={`text-xs text-gray-500 ${
-                          message.role === "user" ? "text-right" : "text-left"
-                        }`}
-                      >
-                        {new Date(message.timestamp).toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
+                  )}
+                  {(message.role === "assistant" || message.role === "system") && (
+                    <div className="flex justify-start">
+                      <div className="flex gap-3 max-w-[80%]">
+                        <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gray-100">
+                          <Feather className="h-5 w-5" style={{ color: displayColor }} />
+                        </div>
+                        <div className="rounded-lg p-4 bg-gray-100 text-gray-800">
+                          {message.isThinking ? (
+                            <div className="flex items-center gap-2">
+                              <div className="animate-pulse flex space-x-2">
+                                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: displayColor }}></div>
+                                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: displayColor }}></div>
+                                <div className="h-2 w-2 rounded-full" style={{ backgroundColor: displayColor }}></div>
+                              </div>
+                              <span className="text-sm text-gray-500">Thinking...</span>
+                            </div>
+                          ) : (
+                            <div className="prose prose-sm max-w-none">
+                              <ReactMarkdown>{message.content}</ReactMarkdown>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {processingMessageId && (
+                <div className="flex justify-start mt-2">
+                  <div className="flex gap-3 max-w-[80%]">
+                    <div className="h-8 w-8 rounded-full flex items-center justify-center bg-gray-100">
+                      <Feather className="h-5 w-5" style={{ color: displayColor }} />
+                    </div>
+                    <div className="rounded-lg p-4 bg-gray-100 text-gray-800">
+                      <div className="flex items-center gap-2">
+                        <div className="animate-pulse flex space-x-2">
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: displayColor }}></div>
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: displayColor }}></div>
+                          <div className="h-2 w-2 rounded-full" style={{ backgroundColor: displayColor }}></div>
+                        </div>
+                        <span className="text-sm text-gray-500">Thinking...</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
           </ScrollArea>
-          
-          <div className="border-t p-4 bg-white">
-            <SearchChat 
-              autoFocus={true} 
-              value={inputText} 
-              onChange={(e) => setInputText(e.target.value)} 
-              onSubmit={handleSubmit}
-              disableNavigation={true}
-            />
-            <div className="text-xs text-center mt-3 text-gray-500">
-              PANTA Flows can make mistakes. Please check important information.
-            </div>
+        </div>
+        
+        <div className="sticky bottom-0 border-t p-4 bg-white">
+          <SearchChat 
+            autoFocus={true} 
+            value={inputText} 
+            onChange={(e) => setInputText(e.target.value)} 
+            onSubmit={handleSubmit}
+            disableNavigation={true}
+            onSearch={() => {}}
+          />
+          <div className="text-xs text-center mt-3 text-gray-500">
+            PANTA Flows can make mistakes. Please check important information.
           </div>
         </div>
+      </div>
 
-        <div className="absolute top-4 right-4 z-10">
-          <Button 
-            variant="ghost" 
-            size="icon"
-            onClick={handleClose}
-            className="rounded-full hover:bg-black hover:text-white"
-          >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Close chat</span>
-          </Button>
-        </div>
+      <div className="absolute top-4 right-4 z-10">
+        <Button 
+          variant="ghost" 
+          size="icon"
+          onClick={handleClose}
+          className="rounded-full hover:bg-black hover:text-white"
+        >
+          <X className="h-5 w-5" />
+          <span className="sr-only">Close chat</span>
+        </Button>
       </div>
     </div>
   );
